@@ -232,6 +232,14 @@ namespace Readarr.Http.ClientSchema
                 return options.OrderBy(o => o.Order).ToList();
             }
 
+            if (typeof(ISelectOptionsConverter).IsAssignableFrom(selectOptions))
+            {
+                var converter = Activator.CreateInstance(selectOptions) as ISelectOptionsConverter;
+                return converter.GetSelectOptions()
+                    .Select(o => new SelectOption { Value = o.Value, Name = o.Name, Order = o.Order, Hint = o.Hint })
+                    .ToList();
+            }
+
             throw new NotSupportedException();
         }
 
