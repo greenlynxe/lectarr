@@ -7,6 +7,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Blocklisting;
 using NzbDrone.Core.Books;
 using NzbDrone.Core.History;
+using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Parser.Model;
 
@@ -40,10 +41,35 @@ namespace NzbDrone.Core.CustomFormats
                 BookInfo = remoteBook.ParsedBookInfo,
                 Author = remoteBook.Author,
                 Size = size,
-                IndexerFlags = remoteBook.Release?.IndexerFlags ?? 0
+                IndexerFlags = remoteBook.Release?.IndexerFlags ?? 0,
+                Languages = CombineLanguages(remoteBook.Release?.Languages, remoteBook.ParsedBookInfo?.Languages)
             };
 
             return ParseCustomFormat(input);
+        }
+
+        // Combines explicit indexer metadata (e.g. the newznab/torznab
+        // language attribute) with languages parsed from the release title.
+        // Explicit metadata wins when both are known.
+        private static List<Language> CombineLanguages(List<Language> releaseLanguages, List<Language> parsedLanguages)
+        {
+            var known = (releaseLanguages ?? new List<Language>())
+                .Where(l => l != null && l != Language.Unknown)
+                .ToList();
+
+            if (!known.Any())
+            {
+                known = (parsedLanguages ?? new List<Language>())
+                    .Where(l => l != null && l != Language.Unknown)
+                    .ToList();
+            }
+
+            if (!known.Any())
+            {
+                return new List<Language> { Language.Unknown };
+            }
+
+            return known.DistinctBy(l => l.Id).ToList();
         }
 
         public List<CustomFormat> ParseCustomFormat(BookFile bookFile, Author author)
@@ -65,7 +91,8 @@ namespace NzbDrone.Core.CustomFormats
                 AuthorName = author.Name,
                 ReleaseTitle = parsed?.ReleaseTitle ?? blocklist.SourceTitle,
                 Quality = blocklist.Quality,
-                ReleaseGroup = parsed?.ReleaseGroup
+                ReleaseGroup = parsed?.ReleaseGroup,
+                Languages = parsed?.Languages ?? Parser.LanguageParser.ParseLanguages(blocklist.SourceTitle)
             };
 
             var input = new CustomFormatInput
@@ -73,7 +100,8 @@ namespace NzbDrone.Core.CustomFormats
                 BookInfo = bookInfo,
                 Author = author,
                 Size = blocklist.Size ?? 0,
-                IndexerFlags = blocklist.IndexerFlags
+                IndexerFlags = blocklist.IndexerFlags,
+                Languages = bookInfo.Languages
             };
 
             return ParseCustomFormat(input);
@@ -92,6 +120,7 @@ namespace NzbDrone.Core.CustomFormats
                 ReleaseTitle = parsed?.ReleaseTitle ?? history.SourceTitle,
                 Quality = history.Quality,
                 ReleaseGroup = parsed?.ReleaseGroup,
+                Languages = parsed?.Languages ?? Parser.LanguageParser.ParseLanguages(history.SourceTitle)
             };
 
             var input = new CustomFormatInput
@@ -99,7 +128,8 @@ namespace NzbDrone.Core.CustomFormats
                 BookInfo = bookInfo,
                 Author = author,
                 Size = size,
-                IndexerFlags = indexerFlags
+                IndexerFlags = indexerFlags,
+                Languages = bookInfo.Languages
             };
 
             return ParseCustomFormat(input);
@@ -107,12 +137,17 @@ namespace NzbDrone.Core.CustomFormats
 
         public List<CustomFormat> ParseCustomFormat(LocalBook localBook)
         {
+            var languageTitle = localBook.SceneName.IsNotNullOrWhiteSpace()
+                ? localBook.SceneName
+                : Path.GetFileName(localBook.Path ?? string.Empty);
+
             var bookInfo = new ParsedBookInfo
             {
                 AuthorName = localBook.Author.Name,
                 ReleaseTitle = localBook.SceneName,
                 Quality = localBook.Quality,
-                ReleaseGroup = localBook.ReleaseGroup
+                ReleaseGroup = localBook.ReleaseGroup,
+                Languages = Parser.LanguageParser.ParseLanguages(languageTitle ?? string.Empty)
             };
 
             var input = new CustomFormatInput
@@ -121,6 +156,7 @@ namespace NzbDrone.Core.CustomFormats
                 Author = localBook.Author,
                 Size = localBook.Size,
                 IndexerFlags = localBook.IndexerFlags,
+                Languages = bookInfo.Languages
             };
 
             return ParseCustomFormat(input);
@@ -179,7 +215,8 @@ namespace NzbDrone.Core.CustomFormats
                 AuthorName = author.Name,
                 ReleaseTitle = releaseTitle,
                 Quality = bookFile.Quality,
-                ReleaseGroup = bookFile.ReleaseGroup
+                ReleaseGroup = bookFile.ReleaseGroup,
+                Languages = Parser.LanguageParser.ParseLanguages(releaseTitle ?? string.Empty)
             };
 
             var input = new CustomFormatInput
@@ -188,6 +225,7 @@ namespace NzbDrone.Core.CustomFormats
                 Author = author,
                 Size = bookFile.Size,
                 IndexerFlags = bookFile.IndexerFlags,
+                Languages = bookInfo.Languages,
                 Filename = Path.GetFileName(bookFile.Path)
             };
 

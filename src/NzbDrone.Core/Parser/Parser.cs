@@ -386,7 +386,8 @@ namespace NzbDrone.Core.Parser
                 {
                     AuthorName = foundAuthor,
                     AuthorTitleInfo = GetAuthorTitleInfo(foundAuthor),
-                    BookTitle = foundBook
+                    BookTitle = foundBook,
+                    Languages = LanguageParser.ParseLanguages(releaseTitle)
                 };
 
                 try
@@ -802,6 +803,7 @@ namespace NzbDrone.Core.Parser
 
             result.AuthorName = authorName;
             result.BookTitle = bookTitle;
+            result.Languages = LanguageParser.ParseLanguages(releaseTitle);
             result.AuthorTitleInfo = GetAuthorTitleInfo(result.AuthorName);
             result.ReleaseDate = releaseYear.ToString();
             result.ReleaseVersion = releaseVersion;

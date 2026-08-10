@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using NzbDrone.Core.Languages;
 using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.Parser.Model
@@ -7,6 +8,7 @@ namespace NzbDrone.Core.Parser.Model
     public class ParsedBookInfo
     {
         public string BookTitle { get; set; }
+        public List<Language> Languages { get; set; } = new List<Language>();
         public string AuthorName { get; set; }
         public AuthorTitleInfo AuthorTitleInfo { get; set; }
         public QualityModel Quality { get; set; }
