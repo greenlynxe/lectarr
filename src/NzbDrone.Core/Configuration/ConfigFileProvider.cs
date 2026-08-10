@@ -254,14 +254,7 @@ namespace NzbDrone.Core.Configuration
         {
             get
             {
-                var instanceName = _appOptions.InstanceName ?? GetValue("InstanceName", BuildInfo.AppName);
-
-                if (instanceName.Contains(BuildInfo.AppName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return instanceName;
-                }
-
-                return BuildInfo.AppName;
+                return _appOptions.InstanceName ?? GetValue("InstanceName", "lectarr");
             }
         }
 
