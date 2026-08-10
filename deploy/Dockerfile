@@ -12,7 +12,7 @@ RUN yarn run build --env production
 # → /src/_output/UI
 
 # ---------- Backend ----------
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS backend
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend
 WORKDIR /src
 COPY .editorconfig ./
 COPY src ./src
@@ -22,7 +22,7 @@ RUN dotnet msbuild -restore src/Readarr.sln \
     -p:Platform=Posix \
     -p:RuntimeIdentifiers=linux-musl-x64 \
     -t:PublishAllRids
-# → /src/_output/net6.0/linux-musl-x64/publish
+# → /src/_output/net8.0/linux-musl-x64/publish
 
 # ---------- Runtime ----------
 FROM ghcr.io/linuxserver/baseimage-alpine:3.24
@@ -43,7 +43,7 @@ LABEL maintainer="greenlynxe"
 
 RUN mkdir -p /app/readarr
 
-COPY --from=backend /src/_output/net6.0/linux-musl-x64/publish /app/readarr/bin
+COPY --from=backend /src/_output/net8.0/linux-musl-x64/publish /app/readarr/bin
 COPY --from=frontend /src/_output/UI /app/readarr/bin/UI
 
 RUN echo -e "UpdateMethod=docker\nBranch=main\nPackageVersion=lectarr\nPackageAuthor=greenlynxe" > /app/readarr/package_info

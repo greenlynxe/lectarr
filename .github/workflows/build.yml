@@ -16,7 +16,7 @@ on:
       - "src/Readarr.Api.*/openapi.json"
 
 env:
-  DOTNET_VERSION: "6.0.427"
+  DOTNET_VERSION: "8.0.423"
   READARR_VERSION: 0.4.20
   OUTPUT_FOLDER: ./_output
   ARTIFACTS_FOLDER: ./_artifacts
