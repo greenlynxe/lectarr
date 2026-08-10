@@ -35,6 +35,17 @@ namespace NzbDrone.Core.Indexers.Newznab
 
         protected virtual bool SupportsBookSearch => false;
 
+        protected virtual bool SupportsIsbnSearch
+        {
+            get
+            {
+                var capabilities = _capabilitiesProvider.GetCapabilities(Settings);
+
+                return capabilities.SupportedBookSearchParameters != null &&
+                       capabilities.SupportedBookSearchParameters.Contains("isbn");
+            }
+        }
+
         public virtual IndexerPageableRequestChain GetRecentRequests()
         {
             var pageableRequests = new IndexerPageableRequestChain();
@@ -59,6 +70,13 @@ namespace NzbDrone.Core.Indexers.Newznab
 
             if (SupportsBookSearch)
             {
+                if (SupportsIsbnSearch && searchCriteria.BookIsbn.IsNotNullOrWhiteSpace())
+                {
+                    AddBookPageableRequests(pageableRequests,
+                        searchCriteria,
+                        $"&isbn={searchCriteria.BookIsbn}");
+                }
+
                 AddBookPageableRequests(pageableRequests,
                     searchCriteria,
                     $"&author={NewsnabifyTitle(searchCriteria.AuthorQuery)}&title={NewsnabifyTitle(searchCriteria.BookQuery)}");

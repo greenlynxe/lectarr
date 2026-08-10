@@ -86,10 +86,12 @@ namespace NzbDrone.Core.Books
 
         public Edition FindByTitle(int authorMetadataId, string title)
         {
+            // Consider all editions, not only monitored ones: releases of
+            // translated editions are named after the translated title.
             return Query(Builder().Join<Edition, Book>((e, b) => e.BookId == b.Id)
                 .Where<Book>(b => b.AuthorMetadataId == authorMetadataId)
-                .Where<Edition>(e => e.Monitored == true)
                 .Where<Edition>(e => e.Title == title))
+                .OrderByDescending(e => e.Monitored)
                 .FirstOrDefault();
         }
 

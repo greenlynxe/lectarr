@@ -100,7 +100,9 @@ namespace NzbDrone.Core.Books
 
         public Edition FindByTitleInexact(int authorMetadataId, string title)
         {
-            var books = _editionRepository.FindByAuthorMetadataId(authorMetadataId, true);
+            // Consider all editions, not only monitored ones: releases of
+            // translated editions are named after the translated title.
+            var books = _editionRepository.FindByAuthorMetadataId(authorMetadataId, false);
 
             foreach (var func in EditionScoringFunctions(title))
             {
@@ -116,7 +118,7 @@ namespace NzbDrone.Core.Books
 
         public List<Edition> GetCandidates(int authorMetadataId, string title)
         {
-            var books = _editionRepository.FindByAuthorMetadataId(authorMetadataId, true);
+            var books = _editionRepository.FindByAuthorMetadataId(authorMetadataId, false);
             var output = new List<Edition>();
 
             foreach (var func in EditionScoringFunctions(title))

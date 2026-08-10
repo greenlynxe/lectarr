@@ -163,5 +163,98 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
 
             criteria.Count.Should().Be(0);
         }
+
+        [Test]
+        public async Task should_also_search_alternate_edition_titles()
+        {
+            var monitoredEdition = Builder<Edition>.CreateNew()
+                .With(e => e.Id = 1)
+                .With(e => e.Book = _firstBook)
+                .With(e => e.Monitored = true)
+                .With(e => e.Title = "The Three-Body Problem")
+                .Build();
+
+            var frenchEdition = Builder<Edition>.CreateNew()
+                .With(e => e.Id = 2)
+                .With(e => e.Book = _firstBook)
+                .With(e => e.Monitored = false)
+                .With(e => e.Title = "Le Problème à trois corps")
+                .Build();
+
+            _firstBook.Editions = new List<Edition> { monitoredEdition, frenchEdition };
+
+            var allCriteria = WatchForSearchCriteria();
+
+            await Subject.BookSearch(_firstBook, false, true, false);
+
+            var criteria = allCriteria.OfType<BookSearchCriteria>().ToList();
+
+            criteria.Count.Should().Be(2);
+            criteria[0].BookTitle.Should().Be("The Three-Body Problem");
+            criteria[1].BookTitle.Should().Be("Le Problème à trois corps");
+        }
+
+        [Test]
+        public async Task should_not_search_alternate_edition_with_same_title()
+        {
+            var monitoredEdition = Builder<Edition>.CreateNew()
+                .With(e => e.Id = 1)
+                .With(e => e.Book = _firstBook)
+                .With(e => e.Monitored = true)
+                .With(e => e.Title = "Dune")
+                .Build();
+
+            var frenchEdition = Builder<Edition>.CreateNew()
+                .With(e => e.Id = 2)
+                .With(e => e.Book = _firstBook)
+                .With(e => e.Monitored = false)
+                .With(e => e.Title = "Dune")
+                .Build();
+
+            _firstBook.Editions = new List<Edition> { monitoredEdition, frenchEdition };
+
+            var allCriteria = WatchForSearchCriteria();
+
+            await Subject.BookSearch(_firstBook, false, true, false);
+
+            var criteria = allCriteria.OfType<BookSearchCriteria>().ToList();
+
+            criteria.Count.Should().Be(1);
+            criteria[0].BookTitle.Should().Be("Dune");
+        }
+
+        [Test]
+        public async Task should_cap_alternate_edition_title_searches()
+        {
+            var editions = new List<Edition>
+            {
+                Builder<Edition>.CreateNew()
+                    .With(e => e.Id = 1)
+                    .With(e => e.Book = _firstBook)
+                    .With(e => e.Monitored = true)
+                    .With(e => e.Title = "Original Title")
+                    .Build()
+            };
+
+            for (var i = 0; i < 5; i++)
+            {
+                editions.Add(Builder<Edition>.CreateNew()
+                    .With(e => e.Id = i + 2)
+                    .With(e => e.Book = _firstBook)
+                    .With(e => e.Monitored = false)
+                    .With(e => e.Title = $"Translated Title {i}")
+                    .Build());
+            }
+
+            _firstBook.Editions = editions;
+
+            var allCriteria = WatchForSearchCriteria();
+
+            await Subject.BookSearch(_firstBook, false, true, false);
+
+            var criteria = allCriteria.OfType<BookSearchCriteria>().ToList();
+
+            criteria.Count.Should().Be(3);
+        }
     }
 }
