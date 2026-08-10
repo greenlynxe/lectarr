@@ -14,6 +14,7 @@ namespace Readarr.Api.V1.Profiles.Metadata
         public bool SkipPartsAndSets { get; set; }
         public bool SkipSeriesSecondary { get; set; }
         public string AllowedLanguages { get; set; }
+        public string PreferredLanguage { get; set; }
         public int MinPages { get; set; }
         public List<string> Ignored { get; set; }
     }
@@ -37,6 +38,7 @@ namespace Readarr.Api.V1.Profiles.Metadata
                 SkipPartsAndSets = model.SkipPartsAndSets,
                 SkipSeriesSecondary = model.SkipSeriesSecondary,
                 AllowedLanguages = model.AllowedLanguages,
+                PreferredLanguage = model.PreferredLanguage,
                 MinPages = model.MinPages,
                 Ignored = model.Ignored
             };
@@ -59,6 +61,7 @@ namespace Readarr.Api.V1.Profiles.Metadata
                 SkipPartsAndSets = resource.SkipPartsAndSets,
                 SkipSeriesSecondary = resource.SkipSeriesSecondary,
                 AllowedLanguages = resource.AllowedLanguages,
+                PreferredLanguage = resource.PreferredLanguage,
                 MinPages = resource.MinPages,
                 Ignored = resource.Ignored
             };

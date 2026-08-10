@@ -39,6 +39,7 @@ function EditMetadataProfileModalContent(props) {
     skipPartsAndSets,
     skipSeriesSecondary,
     allowedLanguages,
+    preferredLanguage,
     ignored,
     minPages
   } = item;
@@ -171,6 +172,20 @@ function EditMetadataProfileModalContent(props) {
                   name="allowedLanguages"
                   {...allowedLanguages}
                   helpText={translate('Iso639-3')}
+                  onChange={onInputChange}
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <FormLabel>
+                  {translate('PreferredEditionLanguage')}
+                </FormLabel>
+
+                <FormInputGroup
+                  type={inputTypes.TEXT}
+                  name="preferredLanguage"
+                  {...preferredLanguage}
+                  helpText={translate('PreferredEditionLanguageHelpText')}
                   onChange={onInputChange}
                 />
               </FormGroup>

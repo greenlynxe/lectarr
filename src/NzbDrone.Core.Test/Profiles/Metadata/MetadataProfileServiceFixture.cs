@@ -357,5 +357,88 @@ namespace NzbDrone.Core.Test.Profiles.Metadata
             Assert.NotNull(result);
             Assert.IsInstanceOf<List<Book>>(result);
         }
+
+        [Test]
+        public void FilterBooks_should_keep_edition_in_preferred_language_even_if_not_in_allowed_languages()
+        {
+            var profile = Builder<MetadataProfile>.CreateNew()
+                .With(p => p.Id = 1)
+                .With(p => p.MinPopularity = 0)
+                .With(p => p.SkipMissingDate = false)
+                .With(p => p.SkipMissingIsbn = false)
+                .With(p => p.SkipPartsAndSets = false)
+                .With(p => p.SkipSeriesSecondary = false)
+                .With(p => p.MinPages = 0)
+                .With(p => p.Ignored = new List<string>())
+                .With(p => p.AllowedLanguages = "eng, null")
+                .With(p => p.PreferredLanguage = "fre")
+                .Build();
+
+            var englishEdition = Builder<Edition>.CreateNew()
+                .With(e => e.ForeignEditionId = "1")
+                .With(e => e.Language = "eng")
+                .With(e => e.PageCount = 0)
+                .Build();
+
+            var frenchEdition = Builder<Edition>.CreateNew()
+                .With(e => e.ForeignEditionId = "2")
+                .With(e => e.Language = "fre")
+                .With(e => e.PageCount = 0)
+                .Build();
+
+            var germanEdition = Builder<Edition>.CreateNew()
+                .With(e => e.ForeignEditionId = "3")
+                .With(e => e.Language = "ger")
+                .With(e => e.PageCount = 0)
+                .Build();
+
+            var book = Builder<Book>.CreateNew()
+                .With(b => b.ForeignBookId = "123")
+                .With(b => b.Ratings = new Ratings { Value = 4.0m, Votes = 50 })
+                .With(b => b.ReleaseDate = DateTime.UtcNow.AddDays(-1))
+                .With(b => b.SeriesLinks = new LazyLoaded<List<SeriesBookLink>>(new List<SeriesBookLink>()))
+                .With(b => b.Editions = new LazyLoaded<List<Edition>>(new List<Edition> { englishEdition, frenchEdition, germanEdition }))
+                .Build();
+
+            var author = Builder<Author>.CreateNew()
+                .With(a => a.ForeignAuthorId = "204214")
+                .With(a => a.MetadataProfileId = 1)
+                .With(a => a.Metadata = Builder<AuthorMetadata>.CreateNew()
+                    .With(m => m.ForeignAuthorId = "204214")
+                    .Build())
+                .With(a => a.Series = new LazyLoaded<List<Series>>(new List<Series>()))
+                .With(a => a.Books = new LazyLoaded<List<Book>>(new List<Book> { book }))
+                .Build();
+
+            Mocker.GetMock<IMetadataProfileRepository>()
+                .Setup(s => s.Get(1))
+                .Returns(profile);
+
+            Mocker.GetMock<IAuthorService>()
+                .Setup(s => s.FindById(It.IsAny<string>()))
+                .Returns((Author)null);
+
+            Mocker.GetMock<IBookService>()
+                .Setup(s => s.GetBooksByAuthorMetadataId(It.IsAny<int>()))
+                .Returns(new List<Book>());
+
+            Mocker.GetMock<IEditionService>()
+                .Setup(s => s.GetEditionsByAuthor(It.IsAny<int>()))
+                .Returns(new List<Edition>());
+
+            Mocker.GetMock<IMediaFileService>()
+                .Setup(s => s.GetFilesByAuthor(It.IsAny<int>()))
+                .Returns(new List<BookFile>());
+
+            var result = Subject.FilterBooks(author, 1);
+
+            Assert.AreEqual(1, result.Count);
+
+            var languages = result[0].Editions.Value.Select(e => e.Language).ToList();
+
+            Assert.Contains("eng", languages);
+            Assert.Contains("fre", languages);
+            Assert.False(languages.Contains("ger"));
+        }
     }
 }

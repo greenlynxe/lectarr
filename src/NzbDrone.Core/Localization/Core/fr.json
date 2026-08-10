@@ -925,6 +925,8 @@
   "CustomFormatsSpecificationRegularExpression": "Expression régulière",
   "CustomFormatsSpecificationLanguage": "Langue",
   "QualityProfileLanguageHelpText": "Les releases doivent contenir cette langue. « Any » désactive le filtrage par langue ; utilisez plutôt les scores de formats personnalisés pour préférer une langue sans l'exiger.",
+  "PreferredEditionLanguage": "Langue d'édition préférée",
+  "PreferredEditionLanguageHelpText": "Un seul code ISO 639-3 (ex. « fra »). Quand un livre a une édition dans cette langue, elle devient l'édition surveillée : son titre sert à la recherche et à l'affichage. Toujours implicitement autorisée. Vide pour désactiver.",
   "CustomFormatsSpecificationExceptLanguage": "Sauf la langue",
   "CustomFormatsSpecificationExceptLanguageHelpText": "Correspond lorsque la release contient au moins une langue autre que celle sélectionnée",
   "BlocklistAndSearch": "Liste de blocage et recherche",

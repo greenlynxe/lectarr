@@ -32,6 +32,10 @@ namespace Readarr.Api.V1.Profiles.Metadata
                     .All(y => y == "null" || NzbDrone.Core.Books.Calibre.Extensions.KnownLanguages.Contains(y)))
                 .When(x => x.AllowedLanguages.IsNotNullOrWhiteSpace())
                 .WithMessage("Unknown languages");
+            SharedValidator.RuleFor(c => c.PreferredLanguage)
+                .Must(x => NzbDrone.Core.Books.Calibre.Extensions.KnownLanguages.Contains(x.Trim()))
+                .When(x => x.PreferredLanguage.IsNotNullOrWhiteSpace())
+                .WithMessage("Unknown language");
         }
 
         [RestPostById]

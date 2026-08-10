@@ -180,6 +180,13 @@ namespace NzbDrone.Core.Profiles.Metadata
         {
             var allowedLanguages = profile.AllowedLanguages.IsNotNullOrWhiteSpace() ? new HashSet<string>(profile.AllowedLanguages.Trim(',').Split(',').Select(x => x.CanonicalizeLanguage())) : new HashSet<string>();
 
+            // The preferred edition language is always implicitly allowed, so
+            // users don't have to remember to also list it in AllowedLanguages.
+            if (allowedLanguages.Any() && profile.PreferredLanguage.IsNotNullOrWhiteSpace())
+            {
+                allowedLanguages.Add(profile.PreferredLanguage.CanonicalizeLanguage());
+            }
+
             var hash = new HashSet<Edition>(editions);
 
             var localHash = new HashSet<string>(localEditions.Where(x => x.ManualAdd).Select(x => x.ForeignEditionId));
