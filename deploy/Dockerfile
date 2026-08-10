@@ -14,6 +14,7 @@ RUN yarn run build --env production
 # ---------- Backend ----------
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS backend
 WORKDIR /src
+COPY .editorconfig ./
 COPY src ./src
 COPY Logo ./Logo
 RUN dotnet msbuild -restore src/Readarr.sln \

@@ -101,3 +101,6 @@ lectarr n'existe que grâce au travail de
 
 Distribué sous licence GPLv3, comme Readarr et bookshelf — voir
 [LICENSE.md](LICENSE.md).
+
+Développé avec l'aide de [Claude](https://claude.com/claude-code) (Anthropic),
+qui a participé à l'écriture du code et de la documentation.
