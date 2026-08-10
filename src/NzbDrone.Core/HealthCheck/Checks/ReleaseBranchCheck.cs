@@ -31,8 +31,8 @@ namespace NzbDrone.Core.HealthCheck.Checks
 
         public enum ReleaseBranches
         {
-            // ToDo Enable Master as valid once released
-            //Master,
+            // lectarr releases from main
+            Main,
             Develop,
             Nightly
         }
