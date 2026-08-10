@@ -1,12 +1,50 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for more information:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-# https://containers.dev/guide/dependabot
-
 version: 2
 updates:
- - package-ecosystem: "devcontainers"
-   directory: "/"
-   schedule:
-     interval: weekly
+  # Frontend (yarn) — grouped weekly PRs, security fixes arrive as they come
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend (.NET / NuGet)
+  - package-ecosystem: "nuget"
+    directory: "/src"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      nuget-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions used by workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/deploy"
+    schedule:
+      interval: weekly
+  - package-ecosystem: "docker"
+    directory: "/deploy/rreading-glasses"
+    schedule:
+      interval: weekly
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: weekly
