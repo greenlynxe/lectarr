@@ -742,6 +742,8 @@
   "Publisher": "Publisher",
   "Quality": "Quality",
   "QualityDefinitions": "Quality Definitions",
+  "PreferredEditionLanguage": "Preferred Edition Language",
+  "PreferredEditionLanguageHelpText": "Single ISO 639-3 code (e.g. 'fra'). When a book has an edition in this language it becomes the monitored edition, so its title is used for searching and display. Always implicitly allowed. Empty to disable.",
   "QualityProfile": "Quality Profile",
   "QualityProfileIdHelpText": "Quality Profile list items should be added with",
   "QualityProfileLanguageHelpText": "Releases must contain this language. Use 'Any' to disable language filtering; use custom format scores to prefer a language instead of requiring it.",

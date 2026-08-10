@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using NLog;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
+using NzbDrone.Core.Books.Calibre;
 using NzbDrone.Core.Books.Commands;
 using NzbDrone.Core.Books.Events;
 using NzbDrone.Core.Exceptions;
@@ -13,6 +15,7 @@ using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource;
+using NzbDrone.Core.Profiles.Metadata;
 using NzbDrone.Core.RootFolders;
 
 namespace NzbDrone.Core.Books
@@ -41,6 +44,7 @@ namespace NzbDrone.Core.Books
         private readonly IEventAggregator _eventAggregator;
         private readonly ICheckIfBookShouldBeRefreshed _checkIfBookShouldBeRefreshed;
         private readonly IMapCoversToLocal _mediaCoverService;
+        private readonly IMetadataProfileService _metadataProfileService;
         private readonly Logger _logger;
 
         public RefreshBookService(IBookService bookService,
@@ -57,6 +61,7 @@ namespace NzbDrone.Core.Books
                                   IEventAggregator eventAggregator,
                                   ICheckIfBookShouldBeRefreshed checkIfBookShouldBeRefreshed,
                                   IMapCoversToLocal mediaCoverService,
+                                  IMetadataProfileService metadataProfileService,
                                   Logger logger)
         : base(logger, authorMetadataService)
         {
@@ -73,6 +78,7 @@ namespace NzbDrone.Core.Books
             _eventAggregator = eventAggregator;
             _checkIfBookShouldBeRefreshed = checkIfBookShouldBeRefreshed;
             _mediaCoverService = mediaCoverService;
+            _metadataProfileService = metadataProfileService;
             _logger = logger;
         }
 
@@ -277,7 +283,7 @@ namespace NzbDrone.Core.Books
             // hack - add the chilren in refresh children so we can control monitored status
         }
 
-        private void MonitorSingleEdition(SortedChildren children)
+        private void MonitorSingleEdition(SortedChildren children, Author author)
         {
             children.Old.ForEach(x => x.Monitored = false);
             var monitored = children.Future.Where(x => x.Monitored).ToList();
@@ -298,7 +304,10 @@ namespace NzbDrone.Core.Books
                 return;
             }
 
+            var preferredLanguage = GetPreferredEditionLanguage(author);
+
             var toMonitor = monitored.OrderByDescending(x => x.Id > 0 ? _mediaFileService.GetFilesByEdition(x.Id).Count : 0)
+                .ThenByDescending(x => preferredLanguage.IsNotNullOrWhiteSpace() && (x.Language?.CanonicalizeLanguage() ?? string.Empty) == preferredLanguage)
                 .ThenByDescending(x => x.Ratings.Popularity).First();
 
             monitored.ForEach(x => x.Monitored = false);
@@ -312,10 +321,41 @@ namespace NzbDrone.Core.Books
             Debug.Assert(!children.Future.Any() || children.Future.Count(x => x.Monitored) == 1, "one edition monitored");
         }
 
+        private string GetPreferredEditionLanguage(Author author)
+        {
+            var metadataProfileId = author?.MetadataProfileId ?? 0;
+
+            if (metadataProfileId == 0)
+            {
+                // Remote author objects don't carry database fields; resolve
+                // the stored author to find the metadata profile.
+                var authorMetadataId = author?.Metadata?.Value?.Id ?? 0;
+
+                if (authorMetadataId > 0)
+                {
+                    metadataProfileId = _authorService.GetAuthorByMetadataId(authorMetadataId)?.MetadataProfileId ?? 0;
+                }
+            }
+
+            if (metadataProfileId == 0 || !_metadataProfileService.Exists(metadataProfileId))
+            {
+                return null;
+            }
+
+            var preferredLanguage = _metadataProfileService.Get(metadataProfileId).PreferredLanguage;
+
+            if (preferredLanguage.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            return preferredLanguage.CanonicalizeLanguage();
+        }
+
         protected override bool RefreshChildren(SortedChildren localChildren, List<Edition> remoteChildren, Author remoteData, bool forceChildRefresh, bool forceUpdateFileTags, DateTime? lastUpdate)
         {
             // make sure only one of the releases ends up monitored
-            MonitorSingleEdition(localChildren);
+            MonitorSingleEdition(localChildren, remoteData);
 
             localChildren.All.ForEach(x => _logger.Trace($"release: {x} monitored: {x.Monitored}"));
 
