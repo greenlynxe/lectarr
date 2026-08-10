@@ -106,6 +106,8 @@ _TeamCity*
 
 # Readarr
 config.xml
+# docker-compose bind mount (lectarr config lives here when run via compose)
+/config/
 nzbdrone.log*txt
 UpdateLogs/
 *workspace.xml
