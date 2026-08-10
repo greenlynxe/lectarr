@@ -18,6 +18,7 @@ COPY .editorconfig ./
 COPY src ./src
 COPY Logo ./Logo
 RUN dotnet msbuild -restore src/Readarr.sln \
+    -p:SelfContained=True \
     -p:Configuration=Release \
     -p:Platform=Posix \
     -p:RuntimeIdentifiers=linux-musl-x64 \
