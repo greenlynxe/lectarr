@@ -25,7 +25,7 @@ RUN dotnet msbuild -restore src/Readarr.sln \
 # → /src/_output/net6.0/linux-musl-x64/publish
 
 # ---------- Runtime ----------
-FROM ghcr.io/linuxserver/baseimage-alpine:3.21
+FROM ghcr.io/linuxserver/baseimage-alpine:3.24
 
 ENV XDG_CONFIG_HOME="/config/xdg" \
     COMPlus_EnableDiagnostics=0 \
