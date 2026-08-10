@@ -67,11 +67,5 @@ namespace NzbDrone.Core.Validation
         {
             return ruleBuilder.WithState(v => NzbDroneValidationState.Warning);
         }
-
-        public static IRuleBuilderOptions<T, string> ContainsReadarr<T>(this IRuleBuilder<T, string> ruleBuilder)
-        {
-            ruleBuilder.SetValidator(new NotEmptyValidator(null));
-            return ruleBuilder.SetValidator(new RegularExpressionValidator("readarr", RegexOptions.IgnoreCase)).WithMessage("Must contain readarr");
-        }
     }
 }
