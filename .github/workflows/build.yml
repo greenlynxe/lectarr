@@ -94,7 +94,7 @@ jobs:
         run: ./test.sh Linux Unit Test
 
       - name: Report test results
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         if: always()
         continue-on-error: true
         with:
