@@ -744,6 +744,7 @@
   "QualityDefinitions": "Quality Definitions",
   "QualityProfile": "Quality Profile",
   "QualityProfileIdHelpText": "Quality Profile list items should be added with",
+  "QualityProfileLanguageHelpText": "Releases must contain this language. Use 'Any' to disable language filtering; use custom format scores to prefer a language instead of requiring it.",
   "QualityProfiles": "Quality Profiles",
   "QualitySettings": "Quality Settings",
   "QualitySettingsSummary": "Quality sizes and naming",

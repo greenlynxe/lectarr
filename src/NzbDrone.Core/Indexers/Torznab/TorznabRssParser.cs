@@ -14,9 +14,17 @@ namespace NzbDrone.Core.Indexers.Torznab
     {
         public const string ns = "{http://torznab.com/schemas/2015/feed}";
 
+        private readonly TorznabSettings _settings;
+
         public TorznabRssParser()
+            : this(null)
+        {
+        }
+
+        public TorznabRssParser(TorznabSettings settings)
         {
             UseEnclosureUrl = true;
+            _settings = settings;
         }
 
         protected override bool PreProcess(IndexerResponse indexerResponse)
@@ -110,12 +118,19 @@ namespace NzbDrone.Core.Indexers.Torznab
 
             foreach (var language in languages)
             {
-                var mappedLanguage = IsoLanguages.FindByName(language)?.Language ?? null;
+                var mappedLanguage = (IsoLanguages.FindByName(language) ?? IsoLanguages.Find(language.ToLowerInvariant()))?.Language;
 
                 if (mappedLanguage != null)
                 {
                     results.Add(mappedLanguage);
                 }
+            }
+
+            // Fall back to the indexer's configured default language, if any.
+            // Useful for single-language trackers that don't tag releases.
+            if (results.Count == 0 && _settings != null && _settings.DefaultReleaseLanguage != (int)Language.Unknown)
+            {
+                results.Add((Language)_settings.DefaultReleaseLanguage);
             }
 
             return results;

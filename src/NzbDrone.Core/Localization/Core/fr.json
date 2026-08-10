@@ -924,6 +924,7 @@
   "CustomFormatsSpecificationRegularExpressionHelpText": "Format personnalisé RegEx est insensible à la casse",
   "CustomFormatsSpecificationRegularExpression": "Expression régulière",
   "CustomFormatsSpecificationLanguage": "Langue",
+  "QualityProfileLanguageHelpText": "Les releases doivent contenir cette langue. « Any » désactive le filtrage par langue ; utilisez plutôt les scores de formats personnalisés pour préférer une langue sans l'exiger.",
   "CustomFormatsSpecificationExceptLanguage": "Sauf la langue",
   "CustomFormatsSpecificationExceptLanguageHelpText": "Correspond lorsque la release contient au moins une langue autre que celle sélectionnée",
   "BlocklistAndSearch": "Liste de blocage et recherche",

@@ -6,6 +6,7 @@ using NzbDrone.Core.Books;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.CustomFormats.Events;
 using NzbDrone.Core.ImportLists;
+using NzbDrone.Core.Languages;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Qualities;
@@ -196,7 +197,8 @@ namespace NzbDrone.Core.Profiles.Qualities
                 Items = items,
                 MinFormatScore = 0,
                 CutoffFormatScore = 0,
-                FormatItems = formatItems
+                FormatItems = formatItems,
+                Language = Language.Any
             };
 
             return qualityProfile;

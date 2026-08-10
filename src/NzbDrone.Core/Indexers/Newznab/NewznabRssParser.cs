@@ -14,10 +14,18 @@ namespace NzbDrone.Core.Indexers.Newznab
     {
         public const string ns = "{http://www.newznab.com/DTD/2010/feeds/attributes/}";
 
+        private readonly NewznabSettings _settings;
+
         public NewznabRssParser()
+            : this(null)
+        {
+        }
+
+        public NewznabRssParser(NewznabSettings settings)
         {
             PreferredEnclosureMimeTypes = UsenetEnclosureMimeTypes;
             UseEnclosureUrl = true;
+            _settings = settings;
         }
 
         public static void CheckError(XDocument xdoc, IndexerResponse indexerResponse)
@@ -117,12 +125,19 @@ namespace NzbDrone.Core.Indexers.Newznab
 
             foreach (var language in languages)
             {
-                var mappedLanguage = IsoLanguages.FindByName(language)?.Language ?? null;
+                var mappedLanguage = (IsoLanguages.FindByName(language) ?? IsoLanguages.Find(language.ToLowerInvariant()))?.Language;
 
                 if (mappedLanguage != null)
                 {
                     results.Add(mappedLanguage);
                 }
+            }
+
+            // Fall back to the indexer's configured default language, if any.
+            // Useful for single-language trackers that don't tag releases.
+            if (results.Count == 0 && _settings != null && _settings.DefaultReleaseLanguage != (int)Language.Unknown)
+            {
+                results.Add((Language)_settings.DefaultReleaseLanguage);
             }
 
             return results;

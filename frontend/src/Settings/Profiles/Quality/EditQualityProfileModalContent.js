@@ -106,10 +106,12 @@ class EditQualityProfileModalContent extends Component {
       saveError,
       qualities,
       customFormats,
+      languages,
       item,
       isInUse,
       onInputChange,
       onCutoffChange,
+      onLanguageChange,
       onSavePress,
       onModalClose,
       onDeleteQualityProfilePress,
@@ -123,9 +125,12 @@ class EditQualityProfileModalContent extends Component {
       cutoff,
       minFormatScore,
       cutoffFormatScore,
+      language,
       items,
       formatItems
     } = item;
+
+    const languageId = language && language.value ? language.value.id : -1;
 
     return (
       <ModalContent onModalClose={onModalClose}>
@@ -237,6 +242,21 @@ class EditQualityProfileModalContent extends Component {
                           </FormGroup>
                       }
 
+                      <FormGroup size={sizes.EXTRA_SMALL}>
+                        <FormLabel size={sizes.SMALL}>
+                          {translate('Language')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.SELECT}
+                          name="language"
+                          values={languages}
+                          value={languageId}
+                          helpText={translate('QualityProfileLanguageHelpText')}
+                          onChange={onLanguageChange}
+                        />
+                      </FormGroup>
+
                       <div className={styles.formatItemLarge}>
                         {getCustomFormatRender(formatItems, otherProps)}
                       </div>
@@ -310,10 +330,12 @@ EditQualityProfileModalContent.propTypes = {
   saveError: PropTypes.object,
   qualities: PropTypes.arrayOf(PropTypes.object).isRequired,
   customFormats: PropTypes.arrayOf(PropTypes.object).isRequired,
+  languages: PropTypes.arrayOf(PropTypes.object).isRequired,
   item: PropTypes.object.isRequired,
   isInUse: PropTypes.bool.isRequired,
   onInputChange: PropTypes.func.isRequired,
   onCutoffChange: PropTypes.func.isRequired,
+  onLanguageChange: PropTypes.func.isRequired,
   onSavePress: PropTypes.func.isRequired,
   onContentHeightChange: PropTypes.func.isRequired,
   onModalClose: PropTypes.func.isRequired,
