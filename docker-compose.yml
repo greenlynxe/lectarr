@@ -1,0 +1,68 @@
+# lectarr — gestionnaire d'ebooks/audiobooks avec vraie gestion des langues.
+#
+# Démarrage :
+#   docker compose up -d --build
+#
+# Premier build : long (compilation .NET + frontend + Go). Les suivants
+# profitent du cache. L'interface est ensuite sur http://<hôte>:8787.
+
+services:
+  lectarr:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: lectarr:latest
+    container_name: lectarr
+    restart: unless-stopped
+    depends_on:
+      - rreading-glasses
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Paris
+      # Proxy de métadonnées local (patché pour les éditions traduites).
+      # Pour utiliser l'instance publique à la place :
+      #   METADATA_URL: https://api.bookinfo.pro
+      METADATA_URL: http://rreading-glasses:8788
+    volumes:
+      - ./config:/config
+      # Adapte ces chemins à ton homelab :
+      - /path/to/books:/books
+      - /path/to/downloads:/downloads
+    ports:
+      - "8787:8787"
+
+  rreading-glasses:
+    build:
+      context: deploy/rreading-glasses
+    image: lectarr-metadata:latest
+    container_name: lectarr-metadata
+    hostname: rreading-glasses
+    restart: unless-stopped
+    depends_on:
+      - metadata-db
+    entrypoint: ["/main", "serve"]
+    command:
+      - --upstream=www.goodreads.com
+    mem_limit: 256m
+    environment:
+      POSTGRES_HOST: metadata-db
+      POSTGRES_DATABASE: rreading-glasses
+      POSTGRES_USER: rreading-glasses
+      POSTGRES_PASSWORD: lectarr-change-me
+    ports:
+      - "8788:8788"
+
+  metadata-db:
+    image: postgres:17
+    container_name: lectarr-metadata-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rreading-glasses
+      POSTGRES_PASSWORD: lectarr-change-me
+      POSTGRES_DB: rreading-glasses
+    volumes:
+      - metadata_db_data:/var/lib/postgresql/data
+
+volumes:
+  metadata_db_data:
