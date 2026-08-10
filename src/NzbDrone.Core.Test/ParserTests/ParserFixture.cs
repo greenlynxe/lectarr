@@ -37,6 +37,21 @@ namespace NzbDrone.Core.Test.ParserTests
             _books.Add(a);
         }
 
+        private void GivenSearchCriteriaWithAlternateEdition(string authorName, string monitoredTitle, string alternateTitle)
+        {
+            _author.Name = authorName;
+            var a = new Book
+            {
+                Title = monitoredTitle,
+                Editions = new List<Edition>
+                {
+                    new Edition { Title = monitoredTitle, Monitored = true },
+                    new Edition { Title = alternateTitle, Monitored = false }
+                }
+            };
+            _books.Add(a);
+        }
+
         [TestCase("Bad Format", "badformat")]
         public void should_parse_author_name(string postTitle, string title)
         {
@@ -243,6 +258,19 @@ namespace NzbDrone.Core.Test.ParserTests
 
             parseResult.AuthorName.Should().Be(expectedAuthor);
             parseResult.BookTitle.Should().Be(expectedBook);
+        }
+
+        // A release named after a translated (non-monitored) edition must
+        // still be matched via the alternate edition title.
+        [TestCase("Liu Cixin", "The Three-Body Problem", "Le Problème à trois corps", "Le Problème à trois corps Liu Cixin FRENCH epub")]
+        [TestCase("Albert Camus", "The Stranger", "L'Étranger", "L'Étranger Albert Camus FRENCH (epub)")]
+        public void should_parse_with_search_criteria_using_alternate_edition_title(string searchAuthor, string monitoredTitle, string alternateTitle, string report)
+        {
+            GivenSearchCriteriaWithAlternateEdition(searchAuthor, monitoredTitle, alternateTitle);
+            var parseResult = Parser.Parser.ParseBookTitleWithSearchCriteria(report, _author, _books);
+
+            parseResult.Should().NotBeNull();
+            parseResult.BookTitle.ToLowerInvariant().Should().Contain(alternateTitle.ToLowerInvariant());
         }
 
         [TestCase("Ed Sheeran", "I See Fire", "Ed Sheeran I See Fire[Mimp3.eu].mp3 FLAC")]

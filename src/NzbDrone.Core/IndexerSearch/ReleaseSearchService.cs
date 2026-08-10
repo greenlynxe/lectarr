@@ -21,6 +21,11 @@ namespace NzbDrone.Core.IndexerSearch
 
     public class ReleaseSearchService : ISearchForReleases
     {
+        // Translated editions are usually released under the translated
+        // title, so searching with the monitored edition's title alone would
+        // never find them. Cap the extra searches to keep indexer load sane.
+        private const int MaxAlternateTitleSearches = 2;
+
         private readonly IIndexerFactory _indexerFactory;
         private readonly IBookService _bookService;
         private readonly IAuthorService _authorService;
@@ -78,19 +83,58 @@ namespace NzbDrone.Core.IndexerSearch
 
         public async Task<List<DownloadDecision>> BookSearch(Book book, bool missingOnly, bool userInvokedSearch, bool interactiveSearch)
         {
+            var downloadDecisions = new List<DownloadDecision>();
+
             var author = _authorService.GetAuthor(book.AuthorId);
+            var editions = book.Editions.Value;
+            var monitoredEdition = editions.SingleOrDefault(x => x.Monitored) ?? editions.FirstOrDefault();
 
             var searchSpec = Get<BookSearchCriteria>(author, new List<Book> { book }, userInvokedSearch, interactiveSearch);
 
-            searchSpec.BookTitle = book.Editions.Value.SingleOrDefault(x => x.Monitored).Title;
+            searchSpec.BookTitle = monitoredEdition?.Title;
+            searchSpec.BookIsbn = monitoredEdition?.Isbn13;
 
-            // searchSpec.BookIsbn = book.Isbn13;
             if (book.ReleaseDate.HasValue)
             {
                 searchSpec.BookYear = book.ReleaseDate.Value.Year;
             }
 
-            return await Dispatch(indexer => indexer.Fetch(searchSpec), searchSpec);
+            downloadDecisions.AddRange(await Dispatch(indexer => indexer.Fetch(searchSpec), searchSpec));
+
+            foreach (var alternateTitle in GetAlternateEditionTitles(editions, monitoredEdition))
+            {
+                var alternateSpec = Get<BookSearchCriteria>(author, new List<Book> { book }, userInvokedSearch, interactiveSearch);
+
+                alternateSpec.BookTitle = alternateTitle;
+
+                if (book.ReleaseDate.HasValue)
+                {
+                    alternateSpec.BookYear = book.ReleaseDate.Value.Year;
+                }
+
+                downloadDecisions.AddRange(await Dispatch(indexer => indexer.Fetch(alternateSpec), alternateSpec));
+            }
+
+            return DeDupeDecisions(downloadDecisions);
+        }
+
+        private static List<string> GetAlternateEditionTitles(List<Edition> editions, Edition monitoredEdition)
+        {
+            if (monitoredEdition == null || monitoredEdition.Title.IsNullOrWhiteSpace())
+            {
+                return new List<string>();
+            }
+
+            var monitoredQuery = SearchCriteriaBase.GetQueryTitle(monitoredEdition.Title);
+
+            return editions
+                .Where(x => !x.Monitored && x.Title.IsNotNullOrWhiteSpace())
+                .OrderByDescending(x => x.Ratings?.Popularity ?? 0)
+                .Select(x => x.Title)
+                .Where(x => !SearchCriteriaBase.GetQueryTitle(x).Equals(monitoredQuery, StringComparison.OrdinalIgnoreCase))
+                .DistinctBy(x => SearchCriteriaBase.GetQueryTitle(x).ToLowerInvariant())
+                .Take(MaxAlternateTitleSearches)
+                .ToList();
         }
 
         private TSpec Get<TSpec>(Author author, List<Book> books, bool userInvokedSearch, bool interactiveSearch)
