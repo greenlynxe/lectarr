@@ -1,0 +1,355 @@
+From a3b92ca187404ecfa18264681fca782e1f5814e1 Mon Sep 17 00:00:00 2001
+From: Renaud Breton <renaud.breton@gmail.com>
+Date: Mon, 10 Aug 2026 15:53:55 +0000
+Subject: [PATCH] feat(gr): surface translated editions
+
+- Paginate the GetBook editions query (limit: 100) instead of relying on
+  the upstream default page (~20 editions sorted by popularity), which
+  effectively hid most non-English editions of popular works.
+- Request secondaryContributorEdges in the BookInfo fragment and
+  re-attribute translated editions to the work's canonical author when
+  the edition's primary contributor is a translator or localized author
+  profile but the canonical author is still credited. Previously such
+  editions were silently discarded by the controller's author check.
+- Extend tests: a translated edition credited to a translator (with the
+  author as secondary contributor) is now included and re-attributed;
+  a genuinely misattributed edition is still excluded.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01XjhEpMx731JW2oVg1Ch2SS
+---
+ gr/generated.go          | 78 +++++++++++++++++++++++++++++++++-------
+ gr/queries.graphql       |  8 ++++-
+ internal/gr.go           | 32 ++++++++++++++++-
+ internal/gr_test.go      | 43 ++++++++++++++++++++--
+ internal/graphql_test.go |  8 ++++-
+ 5 files changed, 151 insertions(+), 18 deletions(-)
+
+diff --git a/gr/generated.go b/gr/generated.go
+index 10d5b03..d92f65e 100644
+--- a/gr/generated.go
++++ b/gr/generated.go
+@@ -12,18 +12,19 @@ import (
+ 
+ // BookInfo includes the GraphQL fields of Book requested by the fragment BookInfo.
+ type BookInfo struct {
+-	Id                     string                                            `json:"id"`
+-	LegacyId               int64                                             `json:"legacyId"`
+-	Description            string                                            `json:"description"`
+-	BookGenres             []BookInfoBookGenresBookGenre                     `json:"bookGenres"`
+-	BookSeries             []BookInfoBookSeries                              `json:"bookSeries"`
+-	Details                BookInfoDetailsBookDetails                        `json:"details"`
+-	ImageUrl               string                                            `json:"imageUrl"`
+-	PrimaryContributorEdge BookInfoPrimaryContributorEdgeBookContributorEdge `json:"primaryContributorEdge"`
+-	Stats                  BookInfoStatsBookOrWorkStats                      `json:"stats"`
+-	Title                  string                                            `json:"title"`
+-	TitlePrimary           string                                            `json:"titlePrimary"`
+-	WebUrl                 string                                            `json:"webUrl"`
++	Id                        string                                                 `json:"id"`
++	LegacyId                  int64                                                  `json:"legacyId"`
++	Description               string                                                 `json:"description"`
++	BookGenres                []BookInfoBookGenresBookGenre                          `json:"bookGenres"`
++	BookSeries                []BookInfoBookSeries                                   `json:"bookSeries"`
++	Details                   BookInfoDetailsBookDetails                             `json:"details"`
++	ImageUrl                  string                                                 `json:"imageUrl"`
++	PrimaryContributorEdge    BookInfoPrimaryContributorEdgeBookContributorEdge      `json:"primaryContributorEdge"`
++	SecondaryContributorEdges []BookInfoSecondaryContributorEdgesBookContributorEdge `json:"secondaryContributorEdges"`
++	Stats                     BookInfoStatsBookOrWorkStats                           `json:"stats"`
++	Title                     string                                                 `json:"title"`
++	TitlePrimary              string                                                 `json:"titlePrimary"`
++	WebUrl                    string                                                 `json:"webUrl"`
+ }
+ 
+ // GetId returns BookInfo.Id, and is useful for accessing the field via an interface.
+@@ -52,6 +53,11 @@ func (v *BookInfo) GetPrimaryContributorEdge() BookInfoPrimaryContributorEdgeBoo
+ 	return v.PrimaryContributorEdge
+ }
+ 
++// GetSecondaryContributorEdges returns BookInfo.SecondaryContributorEdges, and is useful for accessing the field via an interface.
++func (v *BookInfo) GetSecondaryContributorEdges() []BookInfoSecondaryContributorEdgesBookContributorEdge {
++	return v.SecondaryContributorEdges
++}
++
+ // GetStats returns BookInfo.Stats, and is useful for accessing the field via an interface.
+ func (v *BookInfo) GetStats() BookInfoStatsBookOrWorkStats { return v.Stats }
+ 
+@@ -204,6 +210,30 @@ func (v *BookInfoPrimaryContributorEdgeBookContributorEdgeNodeContributor) GetDe
+ 	return v.Description
+ }
+ 
++// BookInfoSecondaryContributorEdgesBookContributorEdge includes the requested fields of the GraphQL type BookContributorEdge.
++type BookInfoSecondaryContributorEdgesBookContributorEdge struct {
++	Role string                                                              `json:"role"`
++	Node BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor `json:"node"`
++}
++
++// GetRole returns BookInfoSecondaryContributorEdgesBookContributorEdge.Role, and is useful for accessing the field via an interface.
++func (v *BookInfoSecondaryContributorEdgesBookContributorEdge) GetRole() string { return v.Role }
++
++// GetNode returns BookInfoSecondaryContributorEdgesBookContributorEdge.Node, and is useful for accessing the field via an interface.
++func (v *BookInfoSecondaryContributorEdgesBookContributorEdge) GetNode() BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor {
++	return v.Node
++}
++
++// BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor includes the requested fields of the GraphQL type Contributor.
++type BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor struct {
++	LegacyId int64 `json:"legacyId"`
++}
++
++// GetLegacyId returns BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor.LegacyId, and is useful for accessing the field via an interface.
++func (v *BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor) GetLegacyId() int64 {
++	return v.LegacyId
++}
++
+ // BookInfoStatsBookOrWorkStats includes the requested fields of the GraphQL type BookOrWorkStats.
+ type BookInfoStatsBookOrWorkStats struct {
+ 	AverageRating float64 `json:"averageRating"`
+@@ -387,6 +417,11 @@ func (v *GetBookGetBookByLegacyIdBook) GetPrimaryContributorEdge() BookInfoPrima
+ 	return v.BookInfo.PrimaryContributorEdge
+ }
+ 
++// GetSecondaryContributorEdges returns GetBookGetBookByLegacyIdBook.SecondaryContributorEdges, and is useful for accessing the field via an interface.
++func (v *GetBookGetBookByLegacyIdBook) GetSecondaryContributorEdges() []BookInfoSecondaryContributorEdgesBookContributorEdge {
++	return v.BookInfo.SecondaryContributorEdges
++}
++
+ // GetStats returns GetBookGetBookByLegacyIdBook.Stats, and is useful for accessing the field via an interface.
+ func (v *GetBookGetBookByLegacyIdBook) GetStats() BookInfoStatsBookOrWorkStats {
+ 	return v.BookInfo.Stats
+@@ -445,6 +480,8 @@ type __premarshalGetBookGetBookByLegacyIdBook struct {
+ 
+ 	PrimaryContributorEdge BookInfoPrimaryContributorEdgeBookContributorEdge `json:"primaryContributorEdge"`
+ 
++	SecondaryContributorEdges []BookInfoSecondaryContributorEdgesBookContributorEdge `json:"secondaryContributorEdges"`
++
+ 	Stats BookInfoStatsBookOrWorkStats `json:"stats"`
+ 
+ 	Title string `json:"title"`
+@@ -474,6 +511,7 @@ func (v *GetBookGetBookByLegacyIdBook) __premarshalJSON() (*__premarshalGetBookG
+ 	retval.Details = v.BookInfo.Details
+ 	retval.ImageUrl = v.BookInfo.ImageUrl
+ 	retval.PrimaryContributorEdge = v.BookInfo.PrimaryContributorEdge
++	retval.SecondaryContributorEdges = v.BookInfo.SecondaryContributorEdges
+ 	retval.Stats = v.BookInfo.Stats
+ 	retval.Title = v.BookInfo.Title
+ 	retval.TitlePrimary = v.BookInfo.TitlePrimary
+@@ -638,6 +676,11 @@ func (v *GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNo
+ 	return v.BookInfo.PrimaryContributorEdge
+ }
+ 
++// GetSecondaryContributorEdges returns GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNodeBook.SecondaryContributorEdges, and is useful for accessing the field via an interface.
++func (v *GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNodeBook) GetSecondaryContributorEdges() []BookInfoSecondaryContributorEdgesBookContributorEdge {
++	return v.BookInfo.SecondaryContributorEdges
++}
++
+ // GetStats returns GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNodeBook.Stats, and is useful for accessing the field via an interface.
+ func (v *GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNodeBook) GetStats() BookInfoStatsBookOrWorkStats {
+ 	return v.BookInfo.Stats
+@@ -700,6 +743,8 @@ type __premarshalGetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBoo
+ 
+ 	PrimaryContributorEdge BookInfoPrimaryContributorEdgeBookContributorEdge `json:"primaryContributorEdge"`
+ 
++	SecondaryContributorEdges []BookInfoSecondaryContributorEdgesBookContributorEdge `json:"secondaryContributorEdges"`
++
+ 	Stats BookInfoStatsBookOrWorkStats `json:"stats"`
+ 
+ 	Title string `json:"title"`
+@@ -728,6 +773,7 @@ func (v *GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNo
+ 	retval.Details = v.BookInfo.Details
+ 	retval.ImageUrl = v.BookInfo.ImageUrl
+ 	retval.PrimaryContributorEdge = v.BookInfo.PrimaryContributorEdge
++	retval.SecondaryContributorEdges = v.BookInfo.SecondaryContributorEdges
+ 	retval.Stats = v.BookInfo.Stats
+ 	retval.Title = v.BookInfo.Title
+ 	retval.TitlePrimary = v.BookInfo.TitlePrimary
+@@ -5980,7 +6026,7 @@ query GetBook ($legacyId: Int!) {
+ 					}
+ 				}
+ 			}
+-			editions {
++			editions(pagination: {limit:100}) {
+ 				edges {
+ 					node {
+ 						... BookInfo
+@@ -6030,6 +6076,12 @@ fragment BookInfo on Book {
+ 			description
+ 		}
+ 	}
++	secondaryContributorEdges {
++		role
++		node {
++			legacyId
++		}
++	}
+ 	stats {
+ 		averageRating
+ 		ratingsCount
+diff --git a/gr/queries.graphql b/gr/queries.graphql
+index 76ae967..7159155 100644
+--- a/gr/queries.graphql
++++ b/gr/queries.graphql
+@@ -38,6 +38,12 @@ fragment BookInfo on Book {
+       description
+     }
+   }
++  secondaryContributorEdges {
++    role
++    node {
++      legacyId
++    }
++  }
+   stats {
+     averageRating
+     ratingsCount
+@@ -70,7 +76,7 @@ query GetBook($legacyId: Int!) {
+           }
+         }
+       }
+-      editions {
++      editions(pagination: { limit: 100 }) {
+         edges {
+           node {
+             ...BookInfo
+diff --git a/internal/gr.go b/internal/gr.go
+index 70e5060..dac358c 100644
+--- a/internal/gr.go
++++ b/internal/gr.go
+@@ -261,7 +261,37 @@ func (g *GRGetter) GetBook(ctx context.Context, bookID int64, saveEditions editi
+ 			if _, ok := editions[key]; ok {
+ 				continue // Already saw an edition similar to this one.
+ 			}
+-			editions[key] = mapToWorkResource(edition, work) // Don't add any more editions like this one.
++			rsc := mapToWorkResource(edition, work)
++
++			// Translated editions are often credited to the translator (or a
++			// localized author profile) as their primary contributor, which
++			// would normally cause the controller to discard them. If the
++			// work's canonical author is still credited on the edition in a
++			// secondary role, re-attribute the edition to them so it survives.
++			canonicalID := work.BestBook.PrimaryContributorEdge.Node.LegacyId
++			if edition.PrimaryContributorEdge.Node.LegacyId != canonicalID {
++				for _, sce := range edition.SecondaryContributorEdges {
++					if sce.Node.LegacyId != canonicalID {
++						continue
++					}
++					// The outer book is the best edition of this work, so its
++					// primary contributor is the canonical author.
++					author := rsc.Authors[0]
++					canonical := book.PrimaryContributorEdge.Node
++					author.KCA = canonical.Id
++					author.Name = canonical.Name
++					author.ForeignID = canonical.LegacyId
++					author.URL = canonical.WebUrl
++					author.ImageURL = canonical.ProfileImageUrl
++					if desc := strings.TrimSpace(canonical.Description); desc != "" {
++						author.Description = html.UnescapeString(_stripTags.Sanitize(desc))
++					}
++					rsc.Authors[0] = author
++					break
++				}
++			}
++
++			editions[key] = rsc // Don't add any more editions like this one.
+ 		}
+ 		saveEditions(slices.Collect(maps.Values(editions))...)
+ 	}
+diff --git a/internal/gr_test.go b/internal/gr_test.go
+index ed6a357..b324363 100644
+--- a/internal/gr_test.go
++++ b/internal/gr_test.go
+@@ -406,6 +406,33 @@ func TestGRGetBookDataIntegrity(t *testing.T) {
+ 										},
+ 									},
+ 								},
++								{
++									Node: gr.GetBookGetBookByLegacyIdBookWorkEditionsBooksConnectionEdgesBooksEdgeNodeBook{
++										BookInfo: gr.BookInfo{
++											LegacyId: 6609769, // Should be included and re-attributed: the translator is primary but the author is still credited.
++											Title:    "translated edition",
++											Details: gr.BookInfoDetailsBookDetails{
++												Language: gr.BookInfoDetailsBookDetailsLanguage{
++													Name: "French",
++												},
++											},
++											PrimaryContributorEdge: gr.BookInfoPrimaryContributorEdgeBookContributorEdge{
++												Node: gr.BookInfoPrimaryContributorEdgeBookContributorEdgeNodeContributor{
++													LegacyId: 7777777, // The translator.
++													Name:     "Traducteur Exemplaire",
++												},
++											},
++											SecondaryContributorEdges: []gr.BookInfoSecondaryContributorEdgesBookContributorEdge{
++												{
++													Role: "Author",
++													Node: gr.BookInfoSecondaryContributorEdgesBookContributorEdgeNodeContributor{
++														LegacyId: 51942,
++													},
++												},
++											},
++										},
++									},
++								},
+ 							},
+ 						},
+ 					},
+@@ -489,10 +516,22 @@ func TestGRGetBookDataIntegrity(t *testing.T) {
+ 		assert.Equal(t, int64(51942), work.Authors[0].ForeignID)
+ 		require.Len(t, work.Authors[0].Works, 1)
+ 
+-		require.Len(t, work.Books, 3)
++		require.Len(t, work.Books, 4)
+ 		assert.Equal(t, int64(6609765), work.Books[0].ForeignID)
+ 		assert.Equal(t, int64(6609766), work.Books[1].ForeignID)
+ 		assert.Equal(t, int64(6609767), work.Books[2].ForeignID)
++		assert.Equal(t, int64(6609769), work.Books[3].ForeignID)
++		assert.Equal(t, "fra", work.Books[3].Language)
++
++		// The translated edition must be re-attributed to the canonical
++		// author, not the translator.
++		translatedBytes, _, err := ctrl.GetBook(ctx, 6609769)
++		require.NoError(t, err)
++		var translated workResource
++		require.NoError(t, json.Unmarshal(translatedBytes, &translated))
++		require.Len(t, translated.Authors, 1)
++		assert.Equal(t, int64(51942), translated.Authors[0].ForeignID)
++		assert.Equal(t, "Sharon M. Draper", translated.Authors[0].Name)
+ 	})
+ 
+ 	t.Run("GetAuthor", func(t *testing.T) {
+@@ -510,7 +549,7 @@ func TestGRGetBookDataIntegrity(t *testing.T) {
+ 		assert.Equal(t, int64(51942), author.ForeignID)
+ 		require.Len(t, author.Works, 1)
+ 		require.Len(t, author.Works[0].Authors, 1)
+-		require.Len(t, author.Works[0].Books, 3, author.Works[0].Books)
++		require.Len(t, author.Works[0].Books, 4, author.Works[0].Books)
+ 	})
+ }
+ 
+diff --git a/internal/graphql_test.go b/internal/graphql_test.go
+index acb3601..bf8ed86 100644
+--- a/internal/graphql_test.go
++++ b/internal/graphql_test.go
+@@ -204,7 +204,7 @@ fragment WorkInfo on books {
+           }
+         }
+       }
+-      editions {
++      editions(pagination: {limit: 100}) {
+         edges {
+           node {
+             ...BookInfo
+@@ -277,6 +277,12 @@ fragment BookInfo on Book {
+       description
+     }
+   }
++  secondaryContributorEdges {
++    role
++    node {
++      legacyId
++    }
++  }
+   stats {
+     averageRating
+     ratingsCount
+-- 
+2.43.0
+
