@@ -39,7 +39,7 @@ namespace NzbDrone.Core.Indexers.Torznab
 
         public override IParseIndexerResponse GetParser()
         {
-            return new TorznabRssParser();
+            return new TorznabRssParser(Settings);
         }
 
         private IndexerDefinition GetDefinition(string name, TorznabSettings settings)

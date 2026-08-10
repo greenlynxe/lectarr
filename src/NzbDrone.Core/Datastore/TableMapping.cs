@@ -23,6 +23,7 @@ using NzbDrone.Core.ImportLists.Exclusions;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Instrumentation;
 using NzbDrone.Core.Jobs;
+using NzbDrone.Core.Languages;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Notifications;
@@ -225,6 +226,8 @@ namespace NzbDrone.Core.Datastore
             SqlMapper.AddTypeHandler(new DapperUtcConverter());
             SqlMapper.AddTypeHandler(new DapperTimeSpanConverter());
             SqlMapper.AddTypeHandler(new DapperQualityIntConverter());
+            SqlMapper.AddTypeHandler(new DapperLanguageIntConverter());
+            SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<Language>>(new LanguageIntConverter()));
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<QualityProfileQualityItem>>(new QualityIntConverter()));
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<ProfileFormatItem>>(new CustomFormatIntConverter()));
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<ICustomFormatSpecification>>(new CustomFormatSpecificationListConverter()));
@@ -235,9 +238,9 @@ namespace NzbDrone.Core.Datastore
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<KeyValuePair<string, int>>>());
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<KeyValuePair<string, int>>());
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<string>>());
-            SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<ParsedBookInfo>());
+            SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<ParsedBookInfo>(new LanguageIntConverter()));
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<ParsedTrackInfo>());
-            SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<ReleaseInfo>());
+            SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<ReleaseInfo>(new LanguageIntConverter()));
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<HashSet<int>>());
             SqlMapper.AddTypeHandler(new OsPathConverter());
             SqlMapper.RemoveTypeMap(typeof(Guid));

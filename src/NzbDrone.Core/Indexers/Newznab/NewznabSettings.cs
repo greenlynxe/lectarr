@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using FluentValidation;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
+using NzbDrone.Core.Languages;
 using NzbDrone.Core.Validation;
 
 namespace NzbDrone.Core.Indexers.Newznab
@@ -54,6 +55,7 @@ namespace NzbDrone.Core.Indexers.Newznab
         {
             ApiPath = "/api";
             Categories = new[] { 3030, 7020, 8010 };
+            DefaultReleaseLanguage = (int)Language.Unknown;
         }
 
         [FieldDefinition(0, Label = "URL")]
@@ -74,7 +76,10 @@ namespace NzbDrone.Core.Indexers.Newznab
         [FieldDefinition(5, Label = "Additional Parameters", HelpText = "Additional Newznab parameters", Advanced = true)]
         public string AdditionalParameters { get; set; }
 
-        // Field 6 is used by TorznabSettings MinimumSeeders
+        [FieldDefinition(10, Label = "Default Release Language", Type = FieldType.Select, SelectOptions = typeof(LanguageFieldConverter), HelpText = "Language to assume for releases from this indexer when none can be detected (from attributes or the release title). Useful for single-language trackers. Unknown = no default.", Advanced = true)]
+        public int DefaultReleaseLanguage { get; set; }
+
+        // Fields 6-9 are used by TorznabSettings
         // If you need to add another field here, update TorznabSettings as well and this comment
         public virtual NzbDroneValidationResult Validate()
         {

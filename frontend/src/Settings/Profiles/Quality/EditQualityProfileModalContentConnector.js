@@ -91,16 +91,41 @@ function createFormatsSelector() {
   );
 }
 
+function createLanguagesSelector() {
+  return createSelector(
+    (state) => state.settings.languages,
+    (languages) => {
+      const items = languages.items;
+      const filterItems = ['Unknown', 'Original'];
+
+      if (!items) {
+        return [];
+      }
+
+      return items
+        .filter((lang) => !filterItems.includes(lang.name))
+        .map((item) => {
+          return {
+            key: item.id,
+            value: item.name
+          };
+        });
+    }
+  );
+}
+
 function createMapStateToProps() {
   return createSelector(
     createProviderSettingsSelector('qualityProfiles'),
     createQualitiesSelector(),
     createFormatsSelector(),
+    createLanguagesSelector(),
     createProfileInUseSelector('qualityProfileId'),
-    (qualityProfile, qualities, customFormats, isInUse) => {
+    (qualityProfile, qualities, customFormats, languages, isInUse) => {
       return {
         qualities,
         customFormats,
+        languages,
         ...qualityProfile,
         isInUse
       };
@@ -189,6 +214,13 @@ class EditQualityProfileModalContentConnector extends Component {
     const cutoffId = item.quality ? item.quality.id : item.id;
 
     this.props.setQualityProfileValue({ name, value: cutoffId });
+  };
+
+  onLanguageChange = ({ name, value }) => {
+    const id = parseInt(value);
+    const language = _.find(this.props.languages, (item) => item.key === id);
+
+    this.props.setQualityProfileValue({ name, value: { id: language.key, name: language.value } });
   };
 
   onSavePress = () => {
@@ -458,6 +490,7 @@ class EditQualityProfileModalContentConnector extends Component {
         onSavePress={this.onSavePress}
         onInputChange={this.onInputChange}
         onCutoffChange={this.onCutoffChange}
+        onLanguageChange={this.onLanguageChange}
         onCreateGroupPress={this.onCreateGroupPress}
         onDeleteGroupPress={this.onDeleteGroupPress}
         onQualityProfileItemAllowedChange={this.onQualityProfileItemAllowedChange}
@@ -479,6 +512,7 @@ EditQualityProfileModalContentConnector.propTypes = {
   isSaving: PropTypes.bool.isRequired,
   saveError: PropTypes.object,
   item: PropTypes.object.isRequired,
+  languages: PropTypes.arrayOf(PropTypes.object).isRequired,
   setQualityProfileValue: PropTypes.func.isRequired,
   fetchQualityProfileSchema: PropTypes.func.isRequired,
   saveQualityProfile: PropTypes.func.isRequired,
