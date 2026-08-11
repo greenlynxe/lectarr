@@ -1,0 +1,97 @@
+"""Standalone Newznab indexer emulation over Anna's Archive.
+
+Optional: skip it and use the Prowlarr/Jackett Cardigann definition
+instead. The item download link points back at the SABnzbd shim's /grab
+route so grabbing routes through this bridge.
+"""
+import logging
+from xml.sax.saxutils import escape
+
+from flask import Blueprint, Response, current_app, request
+
+log = logging.getLogger("newznab")
+
+newznab = Blueprint("newznab", __name__)
+
+
+def _cfg():
+    return current_app.config["BRIDGE"]
+
+
+def _registry():
+    return current_app.config["REGISTRY"]
+
+
+def _authorized() -> bool:
+    return request.args.get("apikey") == _cfg().api_key
+
+
+@newznab.route("/newznab/api", methods=["GET"])
+def api():
+    t = request.args.get("t", "")
+
+    if t == "caps":
+        return Response(_caps(), mimetype="application/xml")
+
+    if not _authorized():
+        return Response(_error("Incorrect API key"), status=401, mimetype="application/xml")
+
+    if t in ("search", "book"):
+        query = request.args.get("q", "").strip()
+        language = request.args.get("lang") or None
+        results = _registry().search(query, language=language) if query else []
+        return Response(_feed(results), mimetype="application/rss+xml")
+
+    return Response(_error(f"Unsupported function: {t}"), status=400, mimetype="application/xml")
+
+
+def _caps() -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        "<caps>"
+        '<server title="annas-bridge"/>'
+        '<limits max="100" default="50"/>'
+        "<searching>"
+        '<search available="yes" supportedParams="q"/>'
+        '<book-search available="yes" supportedParams="q,author,title"/>'
+        "</searching>"
+        "<categories>"
+        '<category id="7000" name="Books"><subcat id="7020" name="Ebooks"/></category>'
+        "</categories>"
+        "</caps>"
+    )
+
+
+def _feed(results) -> str:
+    cfg = _cfg()
+    items = []
+    for r in results:
+        grab = (
+            f"{request.host_url.rstrip('/')}/grab"
+            f"?source={r.source}&id={escape(r.download_id, {'&': '%26'})}"
+            f"&ext={r.extension}&apikey={cfg.api_key}"
+        )
+        title = escape(f"{r.title} [{r.language or '??'}] ({r.extension}) [{r.source}]")
+        items.append(
+            "<item>"
+            f"<title>{title}</title>"
+            f"<guid isPermaLink=\"false\">{escape(r.source + ':' + r.download_id)}</guid>"
+            f"<link>{escape(grab)}</link>"
+            f"<enclosure url=\"{escape(grab)}\" length=\"{r.size_bytes}\" type=\"application/x-nzb\"/>"
+            f"<size>{r.size_bytes}</size>"
+            '<category>7020</category>'
+            f'<newznab:attr name="size" value="{r.size_bytes}" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/"/>'
+            "</item>"
+        )
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">'
+        "<channel>"
+        "<title>annas-bridge</title>"
+        f"{''.join(items)}"
+        "</channel></rss>"
+    )
+
+
+def _error(message: str) -> str:
+    return f'<?xml version="1.0" encoding="UTF-8"?><error code="100" description="{escape(message)}"/>'
