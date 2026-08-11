@@ -47,6 +47,12 @@ const preferredBookFormatOptions = [
   { key: 'pdf', value: 'PDF' }
 ];
 
+const contentLanguageDetectionOptions = [
+  { key: 'disabled', value: 'Disabled' },
+  { key: 'logOnly', value: 'Log Only' },
+  { key: 'reject', value: 'Reject on Mismatch' }
+];
+
 class MediaManagement extends Component {
 
   //
@@ -276,6 +282,21 @@ class MediaManagement extends Component {
                         />
                       </FormGroup> : null
                   }
+
+                  <FormGroup size={sizes.MEDIUM}>
+                    <FormLabel>
+                      {translate('ContentLanguageDetection')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.SELECT}
+                      name="contentLanguageDetection"
+                      values={contentLanguageDetectionOptions}
+                      helpText={translate('ContentLanguageDetectionHelpText')}
+                      onChange={onInputChange}
+                      {...settings.contentLanguageDetection}
+                    />
+                  </FormGroup>
                 </FieldSet>
 
                 <FieldSet
