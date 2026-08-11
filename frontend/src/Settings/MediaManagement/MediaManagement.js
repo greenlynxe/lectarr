@@ -39,6 +39,14 @@ const fileDateOptions = [
   { key: 'bookReleaseDate', value: 'Book Release Date' }
 ];
 
+const preferredBookFormatOptions = [
+  { key: '', value: 'Disabled' },
+  { key: 'epub', value: 'EPUB' },
+  { key: 'mobi', value: 'MOBI' },
+  { key: 'azw3', value: 'AZW3' },
+  { key: 'pdf', value: 'PDF' }
+];
+
 class MediaManagement extends Component {
 
   //
@@ -233,6 +241,42 @@ class MediaManagement extends Component {
                       }
                     </FieldSet>
                 }
+
+                <FieldSet
+                  legend={translate('BookConversion')}
+                >
+                  <FormGroup size={sizes.MEDIUM}>
+                    <FormLabel>
+                      {translate('PreferredBookFormat')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.SELECT}
+                      name="preferredBookFormat"
+                      values={preferredBookFormatOptions}
+                      helpText={translate('PreferredBookFormatHelpText')}
+                      onChange={onInputChange}
+                      {...settings.preferredBookFormat}
+                    />
+                  </FormGroup>
+
+                  {
+                    settings.preferredBookFormat.value ?
+                      <FormGroup size={sizes.MEDIUM}>
+                        <FormLabel>
+                          {translate('DeleteOriginalAfterConvert')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.CHECK}
+                          name="deleteOriginalAfterConvert"
+                          helpText={translate('DeleteOriginalAfterConvertHelpText')}
+                          onChange={onInputChange}
+                          {...settings.deleteOriginalAfterConvert}
+                        />
+                      </FormGroup> : null
+                  }
+                </FieldSet>
 
                 <FieldSet
                   legend={translate('FileManagement')}

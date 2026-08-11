@@ -76,6 +76,16 @@ messages are in English.*
   raisons principales pour lesquelles les éditions FR n'apparaissaient jamais.
   (Patch également proposé upstream.)
 
+### Conversion de format
+
+- **Format préféré** (Settings → Media Management → Book Conversion) : chaque
+  ebook importé dans un autre format est automatiquement converti (epub, mobi,
+  azw3, pdf) via calibre, avec les métadonnées propres (titre de l'édition,
+  auteur, ISBN, langue) intégrées au fichier. Au choix : conserver l'original
+  ou l'envoyer à la corbeille. Nécessite le CLI calibre — décommenter
+  `DOCKER_MODS: linuxserver/mods:universal-calibre` dans le compose (un
+  avertissement de santé s'affiche si la conversion est activée sans lui).
+
 ## Démarrage rapide
 
 ```bash

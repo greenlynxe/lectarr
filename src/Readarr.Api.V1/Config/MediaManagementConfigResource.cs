@@ -27,6 +27,9 @@ namespace Readarr.Api.V1.Config
         public bool CopyUsingHardlinks { get; set; }
         public bool ImportExtraFiles { get; set; }
         public string ExtraFileExtensions { get; set; }
+
+        public string PreferredBookFormat { get; set; }
+        public bool DeleteOriginalAfterConvert { get; set; }
     }
 
     public static class MediaManagementConfigResourceMapper
@@ -55,6 +58,9 @@ namespace Readarr.Api.V1.Config
                 CopyUsingHardlinks = model.CopyUsingHardlinks,
                 ImportExtraFiles = model.ImportExtraFiles,
                 ExtraFileExtensions = model.ExtraFileExtensions,
+
+                PreferredBookFormat = model.PreferredBookFormat,
+                DeleteOriginalAfterConvert = model.DeleteOriginalAfterConvert,
             };
         }
     }
