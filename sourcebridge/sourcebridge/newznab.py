@@ -8,6 +8,8 @@ from xml.sax.saxutils import escape
 
 from flask import Blueprint, Response, current_app, request
 
+from .sources.base import SearchResult
+
 log = logging.getLogger("newznab")
 
 newznab = Blueprint("newznab", __name__)
@@ -38,7 +40,15 @@ def api():
     if t in ("search", "book"):
         query = request.args.get("q", "").strip()
         language = request.args.get("lang") or None
-        results = _registry().search(query, language=language) if query else []
+        if query:
+            results = _registry().search(query, language=language)
+        else:
+            # Empty query = the client's connectivity/category test (and RSS,
+            # which should stay disabled). Return one probe item in the book
+            # category so the test passes; it is never grabbed in normal use.
+            results = [SearchResult(source="probe", download_id="probe",
+                                    title="sourcebridge connectivity probe",
+                                    author="", extension="epub", size_bytes=1, language="")]
         return Response(_feed(results), mimetype="application/rss+xml")
 
     return Response(_error(f"Unsupported function: {t}"), status=400, mimetype="application/xml")
