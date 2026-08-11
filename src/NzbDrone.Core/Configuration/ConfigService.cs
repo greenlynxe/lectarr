@@ -235,6 +235,27 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("RescanAfterRefresh", value); }
         }
 
+        public string PreferredBookFormat
+        {
+            get { return GetValue("PreferredBookFormat", string.Empty); }
+
+            set { SetValue("PreferredBookFormat", value); }
+        }
+
+        public bool DeleteOriginalAfterConvert
+        {
+            get { return GetValueBoolean("DeleteOriginalAfterConvert", false); }
+
+            set { SetValue("DeleteOriginalAfterConvert", value); }
+        }
+
+        public ContentLanguageDetectionType ContentLanguageDetection
+        {
+            get { return GetValueEnum("ContentLanguageDetection", ContentLanguageDetectionType.Disabled); }
+
+            set { SetValue("ContentLanguageDetection", value); }
+        }
+
         public AllowFingerprinting AllowFingerprinting
         {
             get { return GetValueEnum("AllowFingerprinting", AllowFingerprinting.NewFiles); }

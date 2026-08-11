@@ -39,6 +39,20 @@ const fileDateOptions = [
   { key: 'bookReleaseDate', value: 'Book Release Date' }
 ];
 
+const preferredBookFormatOptions = [
+  { key: '', value: 'Disabled' },
+  { key: 'epub', value: 'EPUB' },
+  { key: 'mobi', value: 'MOBI' },
+  { key: 'azw3', value: 'AZW3' },
+  { key: 'pdf', value: 'PDF' }
+];
+
+const contentLanguageDetectionOptions = [
+  { key: 'disabled', value: 'Disabled' },
+  { key: 'logOnly', value: 'Log Only' },
+  { key: 'reject', value: 'Reject on Mismatch' }
+];
+
 class MediaManagement extends Component {
 
   //
@@ -233,6 +247,57 @@ class MediaManagement extends Component {
                       }
                     </FieldSet>
                 }
+
+                <FieldSet
+                  legend={translate('BookConversion')}
+                >
+                  <FormGroup size={sizes.MEDIUM}>
+                    <FormLabel>
+                      {translate('PreferredBookFormat')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.SELECT}
+                      name="preferredBookFormat"
+                      values={preferredBookFormatOptions}
+                      helpText={translate('PreferredBookFormatHelpText')}
+                      onChange={onInputChange}
+                      {...settings.preferredBookFormat}
+                    />
+                  </FormGroup>
+
+                  {
+                    settings.preferredBookFormat.value ?
+                      <FormGroup size={sizes.MEDIUM}>
+                        <FormLabel>
+                          {translate('DeleteOriginalAfterConvert')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.CHECK}
+                          name="deleteOriginalAfterConvert"
+                          helpText={translate('DeleteOriginalAfterConvertHelpText')}
+                          onChange={onInputChange}
+                          {...settings.deleteOriginalAfterConvert}
+                        />
+                      </FormGroup> : null
+                  }
+
+                  <FormGroup size={sizes.MEDIUM}>
+                    <FormLabel>
+                      {translate('ContentLanguageDetection')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.SELECT}
+                      name="contentLanguageDetection"
+                      values={contentLanguageDetectionOptions}
+                      helpText={translate('ContentLanguageDetectionHelpText')}
+                      onChange={onInputChange}
+                      {...settings.contentLanguageDetection}
+                    />
+                  </FormGroup>
+                </FieldSet>
 
                 <FieldSet
                   legend={translate('FileManagement')}
