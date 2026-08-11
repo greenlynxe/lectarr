@@ -62,7 +62,7 @@ def test_resolve_returns_none_on_missing_match(monkeypatch):
     assert src.resolve_download_url("42") is None
 
 
-def test_flaresolverr_used(monkeypatch):
+def test_flaresolverr_used_and_absorbs_session(monkeypatch):
     src = ConfigurableSource(DEF, flaresolverr_url="http://fs:8191")
     captured = {}
 
@@ -71,7 +71,11 @@ def test_flaresolverr_used(monkeypatch):
             pass
 
         def json(self):
-            return {"status": "ok", "solution": {"response": "<html>ok</html>"}}
+            return {"status": "ok", "solution": {
+                "response": "<html>ok</html>",
+                "userAgent": "TestUA/1.0",
+                "cookies": [{"name": "c_token", "value": "abc", "domain": "demo.test"}],
+            }}
 
     def fake_post(url, json=None, timeout=None):
         captured["url"] = url
@@ -81,6 +85,9 @@ def test_flaresolverr_used(monkeypatch):
     monkeypatch.setattr(src._fetcher._http, "post", fake_post)
     assert src._fetcher.get_html("https://demo.test/x") == "<html>ok</html>"
     assert captured["url"] == "http://fs:8191/v1"
+    # Cookies and UA from the solve must carry into the session for download().
+    assert src._fetcher._http.headers["User-Agent"] == "TestUA/1.0"
+    assert src._fetcher._http.cookies.get("c_token") == "abc"
 
 
 def test_loader_env_interpolation_with_default(monkeypatch, tmp_path):

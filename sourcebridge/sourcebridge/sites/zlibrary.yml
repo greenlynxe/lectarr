@@ -1,5 +1,7 @@
-# Z-Library — anonymous where the mirror serves the /dl link on the book
-# page; set a session cookie to lift the daily quota.
+# Z-Library. Its search results are <z-bookcard> web components whose
+# attributes carry everything — including the direct `download` link, so
+# no second fetch is needed to resolve. Anonymous where the mirror serves
+# the /dl link; a session cookie lifts the daily quota.
 key: zlib
 name: Z-Library
 enabled: true
@@ -10,13 +12,19 @@ base_url: ${ZLIB_BASE_URL:-https://z-lib.gd}
 
 search:
   path: /s/{query}             # {query} in the path → not added as a param
-  extra_params:
-    "extensions[]": EPUB
+  # Named groups: id = the /dl download path (used directly by resolve),
+  # lang/ext/size from the card attributes, title/author from the slots.
   row_pattern: >-
-    href="(?P<id>/book/\d+/[^"]+)".*?title="(?P<title>[^"]{3,200})".*?(?P<meta>(?:epub|mobi|azw3|pdf)[^<>]*)
+    <z-bookcard\s+[^>]*?download="(?P<id>[^"]+)"[^>]*?language="(?P<lang>[^"]*)"[^>]*?extension="(?P<ext>[^"]*)"[^>]*?filesize="(?P<size>[^"]*)"[^>]*?>.*?<div slot="title">(?P<title>[^<]*)</div>\s*<div slot="author">(?P<author>[^<]*)</div>
+  language_map:
+    english: en
+    french: fr
+    français: fr
+    spanish: es
+    german: de
+    italian: it
 
+# The download link is already in the card, so resolve is a passthrough.
 resolve:
-  steps:
-    - url: "{base_url}{id}"
-      extract: 'href="(?P<url>[^"]*/dl/\d+/[^"]+)"'
-  result: "{url}"
+  steps: []
+  result: "{base_url}{id}"

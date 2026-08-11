@@ -53,10 +53,25 @@ class Fetcher:
             if data.get("status") != "ok":
                 log.warning("FlareSolverr error for %s: %s", url, data.get("message"))
                 return None
-            return data["solution"]["response"]
+            solution = data["solution"]
+            # Reuse the solved session (cookies + user-agent) so the
+            # subsequent binary download() passes the same protection.
+            self._absorb_session(solution)
+            return solution["response"]
         except (requests.RequestException, KeyError, ValueError) as exc:
             log.warning("FlareSolverr GET failed for %s: %s", url, exc)
             return None
+
+    def _absorb_session(self, solution: dict) -> None:
+        ua = solution.get("userAgent")
+        if ua:
+            self._http.headers["User-Agent"] = ua
+        for cookie in solution.get("cookies", []):
+            name, value = cookie.get("name"), cookie.get("value")
+            if not name:
+                continue
+            domain = cookie.get("domain") or None
+            self._http.cookies.set(name, value, domain=domain)
 
     def download(self, direct_url: str, dest_path: str, progress=None) -> bool:
         try:

@@ -65,6 +65,9 @@ class ConfigurableSource:
             meta = g.get("meta", "") or ""
             ext_group = g.get("ext")
             ext_match = self._ext_re.search(ext_group or meta)
+            # Language from a dedicated 'lang' group (e.g. z-bookcard's
+            # language attribute) if present, else scanned from meta.
+            lang_source = g.get("lang") or meta
 
             out.append(SearchResult(
                 source=self.key,
@@ -73,7 +76,7 @@ class ConfigurableSource:
                 author=_clean(g.get("author", "")),
                 extension=(ext_match.group(1).lower() if ext_match else "epub"),
                 size_bytes=_parse_size(g.get("size") or meta),
-                language=_map_language(meta, lang_map),
+                language=_map_language(lang_source, lang_map),
             ))
         log.info("[%s] parsed %d result(s)", self.key, len(out))
         return out
