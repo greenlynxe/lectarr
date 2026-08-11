@@ -38,7 +38,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libicu74 \
     libsqlite3-0 \
-    xmlstarlet && \
+    xmlstarlet \
+    # Bibliothèques natives du Qt embarqué de calibre (mod universal-calibre)
+    libegl1 \
+    libopengl0 \
+    libgl1 \
+    libfontconfig1 \
+    libxkbcommon0 && \
     rm -rf /var/lib/apt/lists/*
 
 ARG METADATA_URL=http://rreading-glasses:8788
