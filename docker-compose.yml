@@ -24,6 +24,10 @@ services:
       # Pour utiliser l'instance publique à la place :
       #   METADATA_URL: https://api.bookinfo.pro
       METADATA_URL: http://rreading-glasses:8788
+      # Décommenter pour activer la conversion automatique de format
+      # (Settings → Media Management → Book Conversion) — installe le CLI
+      # calibre (ebook-convert) au démarrage du conteneur :
+      #   DOCKER_MODS: linuxserver/mods:universal-calibre
     volumes:
       - ./config:/config
       # Adapte ces chemins à ton homelab :
