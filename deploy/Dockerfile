@@ -21,21 +21,25 @@ RUN dotnet msbuild -restore src/Readarr.sln \
     -p:SelfContained=True \
     -p:Configuration=Release \
     -p:Platform=Posix \
-    -p:RuntimeIdentifiers=linux-musl-x64 \
+    -p:RuntimeIdentifiers=linux-x64 \
     -t:PublishAllRids
-# → /src/_output/net8.0/linux-musl-x64/publish
+# → /src/_output/net8.0/linux-x64/publish
 
 # ---------- Runtime ----------
-FROM ghcr.io/linuxserver/baseimage-alpine:3.24
+# Base glibc (Ubuntu) : requise pour le docker mod universal-calibre
+# (conversion de format) qui ne fonctionne pas sur musl/alpine.
+FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
 
 ENV XDG_CONFIG_HOME="/config/xdg" \
     COMPlus_EnableDiagnostics=0 \
     TMPDIR=/run/readarr-temp
 
-RUN apk add -U --upgrade --no-cache \
-    icu-libs \
-    sqlite-libs \
-    xmlstarlet
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libicu74 \
+    libsqlite3-0 \
+    xmlstarlet && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG METADATA_URL=http://rreading-glasses:8788
 ENV METADATA_URL=${METADATA_URL}
@@ -44,7 +48,7 @@ LABEL maintainer="greenlynxe"
 
 RUN mkdir -p /app/readarr
 
-COPY --from=backend /src/_output/net8.0/linux-musl-x64/publish /app/readarr/bin
+COPY --from=backend /src/_output/net8.0/linux-x64/publish /app/readarr/bin
 COPY --from=frontend /src/_output/UI /app/readarr/bin/UI
 
 RUN echo -e "UpdateMethod=docker\nBranch=main\nPackageVersion=lectarr\nPackageAuthor=greenlynxe" > /app/readarr/package_info
