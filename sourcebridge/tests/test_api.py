@@ -81,6 +81,8 @@ def test_addurl_downloads_and_reports_completed(client):
         slot = next((s for s in h if s["nzo_id"] == nzo and s["status"] == "Completed"), None)
         if slot:
             assert slot["storage"].endswith(".epub") and os.path.exists(slot["storage"])
+            # completed file must be under the category subfolder
+            assert os.path.basename(os.path.dirname(slot["storage"])) == "books"
             return
         time.sleep(0.05)
     pytest.fail("job did not complete")

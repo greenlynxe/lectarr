@@ -63,9 +63,12 @@ class DownloadManager:
                 job.status = "failed"
             return
 
-        os.makedirs(self._dir, exist_ok=True)
+        # Match SABnzbd: completed files land in <complete_dir>/<category>,
+        # which is where *arr looks for them.
+        target_dir = os.path.join(self._dir, job.category) if job.category else self._dir
+        os.makedirs(target_dir, exist_ok=True)
         filename = f"{job.name}.{job.extension}".translate(_SAFE)
-        dest = os.path.join(self._dir, filename)
+        dest = os.path.join(target_dir, filename)
 
         def report(fraction: float) -> None:
             with job.lock:
