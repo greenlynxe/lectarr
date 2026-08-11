@@ -1,4 +1,5 @@
 """Bridge API tests (SABnzbd shim + Newznab), source-independent."""
+import io
 import os
 import sys
 import time
@@ -86,6 +87,33 @@ def test_addurl_downloads_and_reports_completed(client):
             return
         time.sleep(0.05)
     pytest.fail("job did not complete")
+
+
+def test_nzb_endpoint_returns_valid_nzb(client):
+    r = client.get("/nzb?source=fake&id=/dl/42&ext=epub&apikey=secret")
+    assert r.status_code == 200
+    root = ET.fromstring(r.data)
+    ns = "{http://www.newzbin.com/DTD/2003/nzb}"
+    assert root.tag.endswith("nzb")
+    assert len(root.findall(ns + "file")) == 1
+
+
+def test_addfile_parses_nzb_and_completes(client):
+    from sourcebridge.nzb import build_nzb
+    nzb_bytes = build_nzb("fake", "42", "epub", "Some Book").encode()
+    r = client.post("/api?mode=addfile&apikey=secret&cat=books&nzbname=Some+Book",
+                    data={"name": (io.BytesIO(nzb_bytes), "release.nzb")},
+                    content_type="multipart/form-data")
+    nzo = r.get_json()["nzo_ids"][0]
+    for _ in range(50):
+        h = client.get("/api?mode=history&apikey=secret").get_json()["history"]["slots"]
+        slot = next((s for s in h if s["nzo_id"] == nzo and s["status"] == "Completed"), None)
+        if slot:
+            assert os.path.basename(os.path.dirname(slot["storage"])) == "books"
+            assert "Some Book" in slot["name"]
+            return
+        time.sleep(0.05)
+    pytest.fail("addfile job did not complete")
 
 
 def test_empty_registry_returns_no_results(config):

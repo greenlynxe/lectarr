@@ -77,8 +77,10 @@ def _feed(results) -> str:
     pub_date = formatdate(usegmt=True)  # *arr requires a valid RSS pubDate
     items = []
     for r in results:
-        grab = (
-            f"{request.host_url.rstrip('/')}/grab"
+        # The release "download" is our /nzb envelope; *arr validates it as
+        # an NZB then hands it to the SABnzbd shim via addfile.
+        nzb_url = (
+            f"{request.host_url.rstrip('/')}/nzb"
             f"?source={r.source}&id={escape(r.download_id, {'&': '%26'})}"
             f"&ext={r.extension}&apikey={cfg.api_key}"
         )
@@ -92,8 +94,8 @@ def _feed(results) -> str:
             f"<title>{title}</title>"
             f"<guid isPermaLink=\"false\">{escape(r.source + ':' + r.download_id)}</guid>"
             f"<pubDate>{pub_date}</pubDate>"
-            f"<link>{escape(grab)}</link>"
-            f"<enclosure url=\"{escape(grab)}\" length=\"{r.size_bytes}\" type=\"application/x-nzb\"/>"
+            f"<link>{escape(nzb_url)}</link>"
+            f"<enclosure url=\"{escape(nzb_url)}\" length=\"{r.size_bytes}\" type=\"application/x-nzb\"/>"
             f"<size>{r.size_bytes}</size>"
             "<category>7020</category>"
             f'<newznab:attr name="size" value="{r.size_bytes}" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/"/>'

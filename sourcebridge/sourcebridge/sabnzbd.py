@@ -8,6 +8,8 @@ from urllib.parse import urlparse, parse_qs
 
 from flask import Blueprint, current_app, jsonify, request
 
+from .nzb import parse_nzb
+
 log = logging.getLogger("sabnzbd")
 
 sab = Blueprint("sabnzbd", __name__)
@@ -59,6 +61,9 @@ def api():
     if mode == "addurl":
         return _add_url()
 
+    if mode == "addfile":
+        return _add_file()
+
     if mode == "queue":
         return _queue()
 
@@ -80,6 +85,25 @@ def _add_url():
 
     title = request.values.get("nzbname") or download_id
     ext = _param(raw, "ext") or "epub"
+    nzo_id = _manager().enqueue(source=source, download_id=download_id,
+                                name=title, category=category, extension=ext)
+    return jsonify({"status": True, "nzo_ids": [nzo_id]})
+
+
+def _add_file():
+    # *arr uploads the release NZB (our envelope) here; read source/id/ext
+    # back out of it.
+    uploaded = next(iter(request.files.values()), None)
+    content = uploaded.read().decode("utf-8", "ignore") if uploaded else request.get_data(as_text=True)
+    meta = parse_nzb(content)
+
+    source, download_id = meta.get("source"), meta.get("id")
+    if not source or not download_id:
+        return jsonify({"status": False, "error": "NZB missing source/id"}), 200
+
+    category = request.values.get("cat", _cfg().category)
+    title = request.values.get("nzbname") or download_id
+    ext = meta.get("ext") or "epub"
     nzo_id = _manager().enqueue(source=source, download_id=download_id,
                                 name=title, category=category, extension=ext)
     return jsonify({"status": True, "nzo_ids": [nzo_id]})
