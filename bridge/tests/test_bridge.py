@@ -46,8 +46,9 @@ class FakeSource(Source):
 @pytest.fixture
 def config(tmp_path):
     return Config(api_key="secret", annas_base_url="", annas_secret_key="",
-                  zlib_base_url="", zlib_cookie="", download_dir=str(tmp_path),
-                  category="books", port=8790, max_concurrent=2)
+                  zlib_base_url="", zlib_cookie="", flaresolverr_url="",
+                  download_dir=str(tmp_path), category="books", port=8790,
+                  max_concurrent=2)
 
 
 @pytest.fixture

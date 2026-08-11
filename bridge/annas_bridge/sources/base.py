@@ -23,9 +23,10 @@ class SearchResult:
 class Source(ABC):
     key: str = "base"
 
-    def __init__(self, session: Optional[requests.Session] = None):
+    def __init__(self, session: Optional[requests.Session] = None, flaresolverr_url: str = ""):
         self._http = session or requests.Session()
         self._http.headers.setdefault("User-Agent", "annas-bridge/1.0")
+        self._flaresolverr = (flaresolverr_url or "").rstrip("/")
 
     @property
     def enabled(self) -> bool:
@@ -38,6 +39,42 @@ class Source(ABC):
     @abstractmethod
     def resolve_download_url(self, download_id: str) -> Optional[str]:
         ...
+
+    def get_html(self, url: str, params: Optional[dict] = None) -> Optional[str]:
+        """Fetch an HTML page, transparently solving Cloudflare via
+        FlareSolverr when configured (free-tier download pages are often
+        challenge-protected)."""
+        if params:
+            sep = "&" if "?" in url else "?"
+            url = url + sep + "&".join(f"{k}={requests.utils.quote(str(v))}" for k, v in params.items())
+
+        if self._flaresolverr:
+            return self._get_via_flaresolverr(url)
+
+        try:
+            resp = self._http.get(url, timeout=30)
+            resp.raise_for_status()
+            return resp.text
+        except requests.RequestException as exc:
+            log.warning("[%s] GET failed for %s: %s", self.key, url, exc)
+            return None
+
+    def _get_via_flaresolverr(self, url: str) -> Optional[str]:
+        try:
+            resp = self._http.post(
+                f"{self._flaresolverr}/v1",
+                json={"cmd": "request.get", "url": url, "maxTimeout": 60000},
+                timeout=90,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("status") != "ok":
+                log.warning("[%s] FlareSolverr error for %s: %s", self.key, url, data.get("message"))
+                return None
+            return data["solution"]["response"]
+        except (requests.RequestException, KeyError, ValueError) as exc:
+            log.warning("[%s] FlareSolverr GET failed for %s: %s", self.key, url, exc)
+            return None
 
     def download(self, direct_url: str, dest_path: str, progress=None) -> bool:
         """Generic streamed download; providers may override for auth quirks."""

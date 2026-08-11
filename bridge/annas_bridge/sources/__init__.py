@@ -17,8 +17,8 @@ class SourceRegistry:
     @classmethod
     def from_config(cls, config) -> "SourceRegistry":
         return cls([
-            AnnasArchive(config.annas_base_url, config.annas_secret_key),
-            ZLibrary(config.zlib_base_url, config.zlib_cookie),
+            AnnasArchive(config.annas_base_url, config.annas_secret_key, config.flaresolverr_url),
+            ZLibrary(config.zlib_base_url, config.zlib_cookie, config.flaresolverr_url),
         ])
 
     def get(self, key: str) -> Optional[Source]:

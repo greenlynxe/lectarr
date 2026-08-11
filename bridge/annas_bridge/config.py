@@ -10,6 +10,7 @@ class Config:
     annas_secret_key: str
     zlib_base_url: str
     zlib_cookie: str
+    flaresolverr_url: str
     download_dir: str
     category: str
     port: int
@@ -27,6 +28,7 @@ class Config:
             annas_secret_key=os.environ.get("ANNAS_SECRET_KEY", "").strip(),
             zlib_base_url=os.environ.get("ZLIB_BASE_URL", "https://z-lib.gd").rstrip("/"),
             zlib_cookie=os.environ.get("ZLIB_COOKIE", "").strip(),
+            flaresolverr_url=os.environ.get("FLARESOLVERR_URL", "").rstrip("/"),
             download_dir=os.environ.get("DOWNLOAD_DIR", "/downloads"),
             category=os.environ.get("CATEGORY", "books"),
             port=int(os.environ.get("PORT", "8790")),

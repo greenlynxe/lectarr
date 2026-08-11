@@ -21,8 +21,9 @@ _EXT_RE = re.compile(r"\b(epub|mobi|azw3|pdf|fb2|djvu)\b", re.IGNORECASE)
 class ZLibrary(Source):
     key = "zlib"
 
-    def __init__(self, base_url: str, cookie: str, session: Optional[requests.Session] = None):
-        super().__init__(session)
+    def __init__(self, base_url: str, cookie: str = "", flaresolverr_url: str = "",
+                 session: Optional[requests.Session] = None):
+        super().__init__(session, flaresolverr_url)
         self._base = base_url.rstrip("/")
         self._cookie = cookie
         if cookie:
@@ -30,20 +31,16 @@ class ZLibrary(Source):
 
     @property
     def enabled(self) -> bool:
-        return bool(self._base and self._cookie)
+        # Usable anonymously on mirrors that serve the download link on the
+        # book page; a cookie lifts the daily quota.
+        return bool(self._base)
 
     def search(self, query: str, language: Optional[str] = None) -> List[SearchResult]:
         params = {"extensions[]": "EPUB"}
         if language:
             params["languages[]"] = language
-        try:
-            resp = self._http.get(f"{self._base}/s/{requests.utils.quote(query)}",
-                                  params=params, timeout=30)
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            log.warning("search failed: %s", exc)
-            return []
-        return self._parse(resp.text)
+        html = self.get_html(f"{self._base}/s/{requests.utils.quote(query)}", params=params)
+        return self._parse(html) if html else []
 
     def _parse(self, html: str) -> List[SearchResult]:
         # Z-Library search cards expose a bookcard with a /book/<id>/<slug>
@@ -71,19 +68,14 @@ class ZLibrary(Source):
         return out
 
     def resolve_download_url(self, download_id: str) -> Optional[str]:
-        if not self._cookie:
-            log.warning("no cookie; cannot resolve %s", download_id)
-            return None
-        # The book page carries the actual /dl/<id>/<hash> download link
-        # for an authenticated session.
-        try:
-            resp = self._http.get(f"{self._base}{download_id}", timeout=30)
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            log.warning("resolve failed for %s: %s", download_id, exc)
+        # The book page carries the actual /dl/<id>/<hash> link. On mirrors
+        # that serve it anonymously this works without a cookie; otherwise a
+        # cookie (set at construction) lifts login/quota limits.
+        page = self.get_html(f"{self._base}{download_id}")
+        if not page:
             return None
 
-        m = re.search(r'href="(?P<url>[^"]*/dl/\d+/[^"]+)"', resp.text)
+        m = re.search(r'href="(?P<url>[^"]*/dl/\d+/[^"]+)"', page)
         if not m:
             log.warning("no download link on page for %s (quota/login?)", download_id)
             return None

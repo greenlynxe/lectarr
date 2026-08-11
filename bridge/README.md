@@ -46,16 +46,20 @@ HTTP file. Two things are therefore needed, and this bridge provides both
 |---|---|---|
 | `BRIDGE_API_KEY` | *(required)* | Key \*arr must present (indexer + client). |
 | `ANNAS_BASE_URL` | `https://annas-archive.org` | Anna's Archive mirror. |
-| `ANNAS_SECRET_KEY` | *(empty)* | Member `fast_download` key. Without it AA is disabled (free tier isn't reliably automatable — waits/captcha). |
+| `ANNAS_SECRET_KEY` | *(empty)* | Optional member `fast_download` key — faster path. Without it the free tier is scraped (partner "slow download" links). |
 | `ZLIB_BASE_URL` | `https://z-lib.gd` | Z-Library mirror (domains rotate). |
-| `ZLIB_COOKIE` | *(empty)* | Logged-in cookie (`remix_userid` + `remix_userkey`). Without it Z-Library is disabled. |
+| `ZLIB_COOKIE` | *(empty)* | Optional logged-in cookie — lifts the daily quota. Without it, mirrors that serve the link anonymously still work. |
+| `FLARESOLVERR_URL` | *(empty)* | e.g. `http://flaresolverr:8191`. When set, page fetches (search + free-tier resolution) go through FlareSolverr so Cloudflare challenges are solved. Strongly recommended for anonymous use. |
 | `DOWNLOAD_DIR` | `/downloads` | Completed-download folder shared with lectarr. |
 | `CATEGORY` | `books` | SABnzbd category reported to \*arr. |
 | `PORT` | `8790` | Listen port. |
 | `MAX_CONCURRENT` | `2` | Parallel downloads. |
 
-A source with no credentials is simply skipped, so you can run either or
-both. Search results are tagged with their origin (`[annas]` / `[zlib]`).
+Both sources work **anonymously** (no key/cookie needed); credentials
+only accelerate or lift quotas. A source is enabled as soon as its base
+URL is set (both are by default). Search results are tagged with their
+origin (`[annas]` / `[zlib]`). Free-tier download pages are usually
+behind Cloudflare — point `FLARESOLVERR_URL` at your FlareSolverr.
 
 ## Wiring into lectarr
 
