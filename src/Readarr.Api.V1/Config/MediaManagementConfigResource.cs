@@ -30,6 +30,7 @@ namespace Readarr.Api.V1.Config
 
         public string PreferredBookFormat { get; set; }
         public bool DeleteOriginalAfterConvert { get; set; }
+        public ContentLanguageDetectionType ContentLanguageDetection { get; set; }
     }
 
     public static class MediaManagementConfigResourceMapper
@@ -61,6 +62,7 @@ namespace Readarr.Api.V1.Config
 
                 PreferredBookFormat = model.PreferredBookFormat,
                 DeleteOriginalAfterConvert = model.DeleteOriginalAfterConvert,
+                ContentLanguageDetection = model.ContentLanguageDetection,
             };
         }
     }

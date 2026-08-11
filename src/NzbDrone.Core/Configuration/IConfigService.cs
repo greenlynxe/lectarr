@@ -39,6 +39,7 @@ namespace NzbDrone.Core.Configuration
         AllowFingerprinting AllowFingerprinting { get; set; }
         string PreferredBookFormat { get; set; }
         bool DeleteOriginalAfterConvert { get; set; }
+        ContentLanguageDetectionType ContentLanguageDetection { get; set; }
 
         //Permissions (Media Management)
         bool SetPermissionsLinux { get; set; }

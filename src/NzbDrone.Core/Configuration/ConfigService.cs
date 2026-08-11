@@ -249,6 +249,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("DeleteOriginalAfterConvert", value); }
         }
 
+        public ContentLanguageDetectionType ContentLanguageDetection
+        {
+            get { return GetValueEnum("ContentLanguageDetection", ContentLanguageDetectionType.Disabled); }
+
+            set { SetValue("ContentLanguageDetection", value); }
+        }
+
         public AllowFingerprinting AllowFingerprinting
         {
             get { return GetValueEnum("AllowFingerprinting", AllowFingerprinting.NewFiles); }

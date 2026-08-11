@@ -186,6 +186,8 @@
   "ConnectionSettingsUrlBaseHelpText": "Adds a prefix to the {connectionName} url, such as {url}",
   "Connections": "Connections",
   "ConsoleLogLevel": "Console Log Level",
+  "ContentLanguageDetection": "Content Language Check",
+  "ContentLanguageDetectionHelpText": "Open imported epubs and detect the actual language from the text. If it does not match the language required by the quality profile: Log Only records a warning, Reject on Mismatch refuses the import.",
   "Continuing": "Continuing",
   "ContinuingAllBooksDownloaded": "Continuing (All books downloaded)",
   "ContinuingMoreBooksAreExpected": "More books are expected",
