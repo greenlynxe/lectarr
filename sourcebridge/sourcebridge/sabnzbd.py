@@ -102,7 +102,13 @@ def _add_file():
         return jsonify({"status": False, "error": "NZB missing source/id"}), 200
 
     category = request.values.get("cat", _cfg().category)
-    title = request.values.get("nzbname") or download_id
+    # *arr passes the release title as the uploaded NZB's filename, not as a
+    # form field; fall back to that (then the NZB subject, then the id) so the
+    # downloaded file gets a clean, meaningful name.
+    upload_name = uploaded.filename if uploaded and uploaded.filename else ""
+    if upload_name.lower().endswith(".nzb"):
+        upload_name = upload_name[:-4]
+    title = request.values.get("nzbname") or upload_name or meta.get("name") or download_id
     ext = meta.get("ext") or "epub"
     nzo_id = _manager().enqueue(source=source, download_id=download_id,
                                 name=title, category=category, extension=ext)
