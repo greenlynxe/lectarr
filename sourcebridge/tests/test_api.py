@@ -61,8 +61,16 @@ def test_get_config_exposes_complete_dir(client, config):
 def test_newznab_search_returns_grab_link(client):
     r = client.get("/newznab/api?t=search&q=hyperion&apikey=secret")
     root = ET.fromstring(r.data)
-    links = [i.findtext("link") for i in root.iter("item")]
-    assert links and "source=fake" in links[0] and "id=42" in links[0]
+    item = next(root.iter("item"))
+    assert "source=fake" in item.findtext("link") and "id=42" in item.findtext("link")
+    assert item.findtext("pubDate")  # *arr requires a pubDate
+
+
+def test_newznab_empty_query_returns_probe(client):
+    r = client.get("/newznab/api?t=search&apikey=secret")
+    root = ET.fromstring(r.data)
+    items = list(root.iter("item"))
+    assert len(items) == 1 and items[0].findtext("pubDate")
 
 
 def test_addurl_downloads_and_reports_completed(client):

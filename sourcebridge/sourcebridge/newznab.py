@@ -4,6 +4,7 @@ Optional: delegate search to Prowlarr/Jackett instead and point their
 download link at the SABnzbd shim's /grab route.
 """
 import logging
+from email.utils import formatdate
 from xml.sax.saxutils import escape
 
 from flask import Blueprint, Response, current_app, request
@@ -73,6 +74,7 @@ def _caps() -> str:
 
 def _feed(results) -> str:
     cfg = _cfg()
+    pub_date = formatdate(usegmt=True)  # *arr requires a valid RSS pubDate
     items = []
     for r in results:
         grab = (
@@ -85,6 +87,7 @@ def _feed(results) -> str:
             "<item>"
             f"<title>{title}</title>"
             f"<guid isPermaLink=\"false\">{escape(r.source + ':' + r.download_id)}</guid>"
+            f"<pubDate>{pub_date}</pubDate>"
             f"<link>{escape(grab)}</link>"
             f"<enclosure url=\"{escape(grab)}\" length=\"{r.size_bytes}\" type=\"application/x-nzb\"/>"
             f"<size>{r.size_bytes}</size>"
