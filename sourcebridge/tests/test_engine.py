@@ -113,3 +113,39 @@ def test_bundled_site_definitions_load():
     # each must be constructible by the engine
     for d in defs.values():
         ConfigurableSource(d)
+
+
+def test_download_rejects_html_page(tmp_path):
+    from sourcebridge.sources.base import Fetcher
+
+    class HtmlResp:
+        headers = {"Content-Type": "text/html; charset=utf-8"}
+
+        def raise_for_status(self): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def iter_content(self, chunk_size=0): yield b"<!DOCTYPE html><html>limit</html>"
+
+    f = Fetcher()
+    f._http.get = lambda url, stream=False, timeout=0: HtmlResp()
+    dest = tmp_path / "book.epub"
+    assert f.download("http://x/dl", str(dest)) is False
+    assert not dest.exists()
+
+
+def test_download_accepts_real_file(tmp_path):
+    from sourcebridge.sources.base import Fetcher
+
+    class FileResp:
+        headers = {"Content-Type": "application/epub+zip", "Content-Length": "8"}
+
+        def raise_for_status(self): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def iter_content(self, chunk_size=0): yield b"PK\x03\x04data"
+
+    f = Fetcher()
+    f._http.get = lambda url, stream=False, timeout=0: FileResp()
+    dest = tmp_path / "book.epub"
+    assert f.download("http://x/dl", str(dest)) is True
+    assert dest.read_bytes().startswith(b"PK")

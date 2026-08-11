@@ -60,6 +60,13 @@ Bundled sites: `annas-archive.yml`, `zlibrary.yml` — both work
 anonymously (free tier); an optional key/cookie via `${ENV}` only
 accelerates or lifts quotas.
 
+> **Anonymous quotas.** Shadow libraries cap anonymous downloads (Z-Library
+> allows only a handful per day per IP). Past the cap the site serves an
+> HTML "limit reached" page instead of the file; the bridge detects any
+> HTML body and reports the download as *failed* rather than saving it as a
+> book. Set a logged-in cookie (`headers.Cookie` in the site YAML, e.g.
+> `${ZLIB_COOKIE}`) to raise the limit.
+
 ## Configuration (environment)
 
 | Variable | Default | Purpose |

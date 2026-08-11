@@ -1,11 +1,19 @@
 """Shared data type and HTTP fetcher (with optional FlareSolverr)."""
 import logging
+import os
 from dataclasses import dataclass
 from typing import Optional
 
 import requests
 
 log = logging.getLogger("fetcher")
+
+
+def _remove(path: str) -> None:
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 
 
 @dataclass
@@ -77,12 +85,32 @@ class Fetcher:
         try:
             with self._http.get(direct_url, stream=True, timeout=180) as resp:
                 resp.raise_for_status()
+
+                # A file download must not be an HTML page: a text/html body
+                # means a Cloudflare challenge, a login wall or a "download
+                # limit reached" page — never the book. Reject it so garbage
+                # never lands in the library.
+                content_type = resp.headers.get("Content-Type", "").lower()
+                if "text/html" in content_type:
+                    log.warning("refusing %s: got an HTML page, not a file (quota/login/challenge?)", direct_url)
+                    return False
+
                 total = int(resp.headers.get("Content-Length", 0))
                 written = 0
+                first = b""
                 with open(dest_path, "wb") as fh:
                     for chunk in resp.iter_content(chunk_size=1 << 16):
                         if not chunk:
                             continue
+                        if not first:
+                            first = chunk[:16]
+                            # Some servers mislabel the content-type; also
+                            # sniff for an HTML document in the first bytes.
+                            if first.lstrip()[:1] == b"<":
+                                log.warning("refusing %s: body starts like HTML, not a file", direct_url)
+                                fh.close()
+                                _remove(dest_path)
+                                return False
                         fh.write(chunk)
                         written += len(chunk)
                         if progress and total:
