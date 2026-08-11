@@ -1,8 +1,7 @@
-"""Standalone Newznab indexer emulation over Anna's Archive.
+"""Standalone Newznab indexer emulation over the configured sources.
 
-Optional: skip it and use the Prowlarr/Jackett Cardigann definition
-instead. The item download link points back at the SABnzbd shim's /grab
-route so grabbing routes through this bridge.
+Optional: delegate search to Prowlarr/Jackett instead and point their
+download link at the SABnzbd shim's /grab route.
 """
 import logging
 from xml.sax.saxutils import escape
@@ -49,7 +48,7 @@ def _caps() -> str:
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         "<caps>"
-        '<server title="annas-bridge"/>'
+        '<server title="sourcebridge"/>'
         '<limits max="100" default="50"/>'
         "<searching>"
         '<search available="yes" supportedParams="q"/>'
@@ -79,15 +78,14 @@ def _feed(results) -> str:
             f"<link>{escape(grab)}</link>"
             f"<enclosure url=\"{escape(grab)}\" length=\"{r.size_bytes}\" type=\"application/x-nzb\"/>"
             f"<size>{r.size_bytes}</size>"
-            '<category>7020</category>'
+            "<category>7020</category>"
             f'<newznab:attr name="size" value="{r.size_bytes}" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/"/>'
             "</item>"
         )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">'
-        "<channel>"
-        "<title>annas-bridge</title>"
+        "<channel><title>sourcebridge</title>"
         f"{''.join(items)}"
         "</channel></rss>"
     )

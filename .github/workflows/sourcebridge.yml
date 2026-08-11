@@ -1,4 +1,4 @@
-name: annas-bridge
+name: sourcebridge
 
 permissions:
   contents: read
@@ -9,8 +9,8 @@ on:
   push:
     branches: [main, feat/annas-bridge]
     paths:
-      - "bridge/**"
-      - ".github/workflows/bridge.yml"
+      - "sourcebridge/**"
+      - ".github/workflows/sourcebridge.yml"
 
 jobs:
   test:
@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install and test
-        working-directory: bridge
+        working-directory: sourcebridge
         run: |
           pip install -r requirements.txt pytest
           python -m pytest tests/ -q
@@ -43,7 +43,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository_owner }}/annas-bridge
+          images: ghcr.io/${{ github.repository_owner }}/sourcebridge
           tags: |
             type=ref,event=branch
             type=sha
@@ -51,7 +51,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: bridge
+          context: sourcebridge
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

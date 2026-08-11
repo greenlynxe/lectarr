@@ -1,0 +1,22 @@
+# Z-Library — anonymous where the mirror serves the /dl link on the book
+# page; set a session cookie to lift the daily quota.
+key: zlib
+name: Z-Library
+enabled: true
+base_url: ${ZLIB_BASE_URL:-https://z-lib.gd}
+
+# headers:
+#   Cookie: "${ZLIB_COOKIE}"
+
+search:
+  path: /s/{query}             # {query} in the path → not added as a param
+  extra_params:
+    "extensions[]": EPUB
+  row_pattern: >-
+    href="(?P<id>/book/\d+/[^"]+)".*?title="(?P<title>[^"]{3,200})".*?(?P<meta>(?:epub|mobi|azw3|pdf)[^<>]*)
+
+resolve:
+  steps:
+    - url: "{base_url}{id}"
+      extract: 'href="(?P<url>[^"]*/dl/\d+/[^"]+)"'
+  result: "{url}"

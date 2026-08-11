@@ -1,0 +1,40 @@
+# Anna's Archive — free-tier anonymous download.
+# Copy this file and adjust to add another site; no code needed.
+# ${ENV_VAR} placeholders are filled from the environment at load time.
+key: annas
+name: Anna's Archive
+enabled: true
+base_url: ${ANNAS_BASE_URL:-https://annas-archive.org}
+
+# Optional per-site HTTP headers (e.g. a session cookie).
+# headers:
+#   Cookie: "${ANNAS_COOKIE}"
+
+search:
+  path: /search
+  query_param: q
+  extra_params:
+    ext: epub
+    sort: newest
+  language_param: lang
+  # Named groups the engine understands: id (required), title, author,
+  # meta (used for extension/size/language), ext, size.
+  row_pattern: >-
+    href="/md5/(?P<id>[a-f0-9]{32})".*?(?P<title>[^<>]{3,200}?)</h3>.*?(?P<meta>[^<>]*?(?:epub|mobi|azw3|pdf)[^<>]*?)<
+  language_map:
+    french: fr
+    français: fr
+    english: en
+    spanish: es
+    german: de
+    italian: it
+
+# Ordered fetch-and-extract steps. Each step's named groups feed the next.
+# {base_url} and {id} are always available.
+resolve:
+  steps:
+    - url: "{base_url}/md5/{id}"
+      extract: 'href="(?P<next>/slow_download/[^"]+)"'
+    - url: "{base_url}{next}"
+      extract: 'href="(?P<url>https?://[^"]+\.(?:epub|mobi|azw3|pdf)[^"]*)"'
+  result: "{url}"

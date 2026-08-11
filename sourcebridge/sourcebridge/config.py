@@ -6,10 +6,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Config:
     api_key: str
-    annas_base_url: str
-    annas_secret_key: str
-    zlib_base_url: str
-    zlib_cookie: str
+    sites_dir: str
+    user_sites_dir: str
     flaresolverr_url: str
     download_dir: str
     category: str
@@ -22,12 +20,12 @@ class Config:
         if not api_key:
             raise SystemExit("BRIDGE_API_KEY is required")
 
+        bundled = os.path.join(os.path.dirname(__file__), "sites")
+
         return cls(
             api_key=api_key,
-            annas_base_url=os.environ.get("ANNAS_BASE_URL", "https://annas-archive.org").rstrip("/"),
-            annas_secret_key=os.environ.get("ANNAS_SECRET_KEY", "").strip(),
-            zlib_base_url=os.environ.get("ZLIB_BASE_URL", "https://z-lib.gd").rstrip("/"),
-            zlib_cookie=os.environ.get("ZLIB_COOKIE", "").strip(),
+            sites_dir=os.environ.get("SITES_DIR", bundled),
+            user_sites_dir=os.environ.get("USER_SITES_DIR", "/config/sites"),
             flaresolverr_url=os.environ.get("FLARESOLVERR_URL", "").rstrip("/"),
             download_dir=os.environ.get("DOWNLOAD_DIR", "/downloads"),
             category=os.environ.get("CATEGORY", "books"),

@@ -1,8 +1,7 @@
 """Minimal SABnzbd API emulation — just what *arr's SABnzbd client uses.
 
-Implements: version, get_config, queue, history, addurl, and the
-delete actions. A grabbed release arrives via addurl with the bridge's
-own /grab URL (name=<url>); the md5 is carried in its query string.
+A grabbed release arrives via addurl with the bridge's own /grab URL
+(name=<url>), whose query string carries source + id.
 """
 import logging
 from urllib.parse import urlparse, parse_qs
@@ -74,13 +73,13 @@ def _add_url():
     raw = request.values.get("name", "")
     category = request.values.get("cat", _cfg().category)
 
-    source = _extract_param(raw, "source")
-    download_id = _extract_param(raw, "id")
+    source = _param(raw, "source")
+    download_id = _param(raw, "id")
     if not source or not download_id:
         return jsonify({"status": False, "error": "grab URL missing source/id"}), 200
 
     title = request.values.get("nzbname") or download_id
-    ext = _extract_param(raw, "ext") or "epub"
+    ext = _param(raw, "ext") or "epub"
     nzo_id = _manager().enqueue(source=source, download_id=download_id,
                                 name=title, category=category, extension=ext)
     return jsonify({"status": True, "nzo_ids": [nzo_id]})
@@ -96,9 +95,7 @@ def _queue():
                 "cat": job.category,
                 "status": "Downloading" if job.status == "downloading" else "Queued",
                 "percentage": str(int(job.progress * 100)),
-                "mb": "0",
-                "mbleft": "0",
-                "timeleft": "0:00:00",
+                "mb": "0", "mbleft": "0", "timeleft": "0:00:00",
             })
     return jsonify({"queue": {"paused": False, "slots": slots}})
 
@@ -120,14 +117,6 @@ def _history():
     return jsonify({"history": {"slots": slots}})
 
 
-@sab.route("/api/queue/delete", methods=["GET", "POST"])
-def _queue_delete_compat():
-    # Some clients call delete via mode=queue&name=delete; handled here too.
-    nzo_id = request.values.get("value", "")
-    _manager().remove(nzo_id, delete_file=True)
-    return jsonify({"status": True})
-
-
-def _extract_param(raw: str, key: str):
+def _param(raw: str, key: str):
     qs = parse_qs(urlparse(raw).query)
     return qs[key][0] if key in qs else None

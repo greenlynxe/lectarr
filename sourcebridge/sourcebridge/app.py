@@ -31,8 +31,6 @@ def create_app(config: Config = None) -> Flask:
 
     @app.route("/grab")
     def grab():
-        # A grab URL is handed to the SABnzbd shim as name=<this>. When a
-        # client fetches it directly, enqueue here too.
         if request.args.get("apikey") != config.api_key:
             return Response("Incorrect API key", status=401)
         source = request.args.get("source", "")

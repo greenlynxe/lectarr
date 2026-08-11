@@ -5,9 +5,9 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY annas_bridge ./annas_bridge
+COPY sourcebridge ./sourcebridge
 
 ENV PORT=8790
 EXPOSE 8790
 
-ENTRYPOINT ["python", "-m", "annas_bridge"]
+ENTRYPOINT ["python", "-m", "sourcebridge"]
