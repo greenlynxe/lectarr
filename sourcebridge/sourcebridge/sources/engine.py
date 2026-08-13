@@ -29,7 +29,10 @@ class ConfigurableSource:
 
     @property
     def enabled(self) -> bool:
-        return self._def.get("enabled", True) and bool(self._base)
+        # `enabled` may be a bool or a ${ENV}-interpolated string like "false".
+        raw = self._def.get("enabled", True)
+        flag = raw if isinstance(raw, bool) else str(raw).strip().lower() not in ("false", "0", "no", "")
+        return flag and bool(self._base)
 
     # -- search --------------------------------------------------------------
 

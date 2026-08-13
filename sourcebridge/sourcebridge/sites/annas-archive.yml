@@ -1,9 +1,14 @@
 # Anna's Archive — free-tier anonymous download.
 # Copy this file and adjust to add another site; no code needed.
 # ${ENV_VAR} placeholders are filled from the environment at load time.
+#
+# Disabled by default: annas-archive.org's domains rotate and frequently
+# don't resolve from a datacenter (FlareSolverr: ERR_NAME_NOT_RESOLVED),
+# and trying it first slows every search. Set ANNAS_ENABLED=true and point
+# ANNAS_BASE_URL at a currently-working mirror to re-enable.
 key: annas
 name: Anna's Archive
-enabled: true
+enabled: ${ANNAS_ENABLED:-false}
 base_url: ${ANNAS_BASE_URL:-https://annas-archive.org}
 
 # Optional per-site HTTP headers (e.g. a session cookie).
