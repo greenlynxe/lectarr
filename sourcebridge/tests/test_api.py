@@ -65,6 +65,8 @@ def test_newznab_search_returns_grab_link(client):
     item = next(root.iter("item"))
     assert "source=fake" in item.findtext("link") and "id=42" in item.findtext("link")
     assert item.findtext("pubDate")  # *arr requires a pubDate
+    # author must lead the title so *arr can parse/match the book
+    assert item.findtext("title").startswith("A - ")
 
 
 def test_newznab_empty_query_returns_probe(client):

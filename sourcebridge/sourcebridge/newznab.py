@@ -84,11 +84,12 @@ def _feed(results) -> str:
             f"?source={r.source}&id={escape(r.download_id, {'&': '%26'})}"
             f"&ext={r.extension}&apikey={cfg.api_key}"
         )
-        # Emit the language as an uppercase [FR]/[EN]… tag so *arr's release
-        # language parser recognises it (lowercase short codes are ignored to
-        # avoid false positives). Omit when unknown.
+        # *arr's release parser needs the author to match a book, so lead with
+        # "Author - Title". The language is an uppercase [FR]/[EN]… tag the
+        # parser recognises (lowercase short codes are ignored). Omit unknowns.
         lang_tag = f"[{r.language.upper()}] " if r.language else ""
-        title = escape(f"{r.title} {lang_tag}({r.extension}) [{r.source}]")
+        name = f"{r.author} - {r.title}" if r.author else r.title
+        title = escape(f"{name} {lang_tag}({r.extension}) [{r.source}]")
         items.append(
             "<item>"
             f"<title>{title}</title>"
