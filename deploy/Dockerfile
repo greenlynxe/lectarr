@@ -3,7 +3,7 @@
 #   docker build -f deploy/Dockerfile -t lectarr .
 
 # ---------- Frontend ----------
-FROM node:20 AS frontend
+FROM node:25 AS frontend
 WORKDIR /src
 COPY package.json yarn.lock tsconfig.json ./
 COPY frontend ./frontend
